@@ -5,6 +5,8 @@ from typing import Union
 import numpy as np
 import cv2 as cv
 
+__version__ = "1.0.1"
+
 Matrix = tuple[
     tuple[Union[int, float], Union[int, float], Union[int, float]],
     tuple[Union[int, float], Union[int, float], Union[int, float]],
@@ -166,7 +168,7 @@ class Figure(Utils):
         self,
         cnv,
         matrix: Matrix = None,
-        stroke_width: int = None,
+        stroke_width: int = 0,
         stroke_color: str = None,
         fill_color: str = None,
     ) -> "Figure":
@@ -284,8 +286,8 @@ class Line(Utils):
         cnv,
         start_point: Point,
         end_point: Point,
-        stroke_color: str = None,
         stroke_width: int = None,
+        stroke_color: str = None,
     ) -> None:
         """Draw line"""
 
