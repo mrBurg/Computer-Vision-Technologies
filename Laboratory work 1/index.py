@@ -24,32 +24,27 @@ cnv = np.full(cfg.cnv_props, 255, dtype=np.uint8)
 
 CX = cfg.cnv_props[1] / 2
 
-oval = Oval(300, 200, CX, 130, quality=1)
-rect = Rectangle(400, 200, CX, 300)
+oval = Oval(cnv, 300, 200, CX, 130, quality=1)
+rect = Rectangle(cnv, 400, 200, CX, 300)
 
 for fig in [oval, rect]:
     for i in range(5):
         fig.scale(0.8, 0.8).draw(
-            cnv,
             stroke_color=cfg.color_palette[i % len(cfg.color_palette)],
             stroke_width=2,
         )
 
-polyline = Polyline([[0, 0], [-20, 100], [20, 100]], CX, 600).scale(4, 1.5)
+polyline = Polyline(cnv, [[0, 0], [-20, 100], [20, 100]], CX, 600).scale(4, 1.5)
 
 for i in range(4):
     polyline.draw(
-        cnv,
         fill_color=cfg.color_palette[(i + 1) % len(cfg.color_palette)],
         stroke_color=cfg.color_palette[i % len(cfg.color_palette)],
         stroke_width=5,
     ).rotate(90)
 
-Oval(50, 50, CX, 600).draw(
-    cnv,
-    stroke_color="#000000",
-    stroke_width=5,
-    fill_color="#ffffff",
+Oval(cnv, 50, 50, CX, 600).draw(
+    stroke_color="#000000", stroke_width=5, fill_color="#ffffff"
 )
 
 cv.imshow("Common Canvas", cnv)  # pylint: disable-msg=E1101
