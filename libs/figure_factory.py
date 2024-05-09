@@ -5,6 +5,8 @@ from typing import Union
 import numpy as np
 import cv2 as cv
 
+__version__ = "2.0.0"
+
 Matrix = tuple[
     tuple[Union[int, float], Union[int, float], Union[int, float]],
     tuple[Union[int, float], Union[int, float], Union[int, float]],
@@ -13,17 +15,46 @@ Matrix = tuple[
 RGBA = tuple[int, int, int, float]
 Point = tuple[int, int]
 Points = list[tuple[*Point, int]]
+Canvas = list[tuple[int, Union[int, None], Union[int, None], Union[int, None]]]
 
 
 @dataclasses.dataclass
 class Config:
-    """Config"""
+    """
+    args: [[[ width:int ], height:int ], depth:int ]
+        - If passed as a single integer, represents the same value for both width and height, and the depth is determined by the `depth` argument or by default if argument `depth` is missing
+        - If passed two integers, represents (width, height), and the depth is determined by the `depth` argument or by default if argument `depth` is missing
+        - If passed three integers, represents (width, height, depth), but the depth is determined by the `depth` argument or the value passed if argument `depth` is missing
+
+    depth: int, optional
+        - If the value of depth goes beyond 1 to 4 inclusive, it changes to the nearest limit.
+
+    If there are no arguments, the default settings are taken (width=1024, height=768, depth=3)
+    """
 
     default_cnv_props = (1024, 768, 3)
     color_palette = ["#ff0000ff", "#ff7400", "#009999", "#00cc00", "#cd0074"]
 
-    def __init__(self, cnv_props: tuple[int, int, int] = None) -> None:
-        if cnv_props is None:
+    def __init__(self, *props, depth: int = None) -> None:
+        if len(props) == 1:
+            self.cnv_props = (
+                props[0],
+                props[0],
+                max(1, min(depth if depth else self.default_cnv_props[2], 4)),
+            )
+        elif len(props) == 2:
+            self.cnv_props = (
+                props[0],
+                props[1],
+                max(1, min(depth if depth else self.default_cnv_props[2], 4)),
+            )
+        elif len(props) == 3:
+            self.cnv_props = (
+                props[0],
+                props[1],
+                max(1, min(depth if depth else props[2], 4)),
+            )
+        else:
             self.cnv_props = self.default_cnv_props
 
     def __str__(self) -> str:
@@ -77,7 +108,14 @@ class Figure(Utils):
     axis_x = 0
     axis_y = 0
 
-    def __init__(self, points: Points, offset_x: int = 0, offset_y: int = 0) -> None:
+    def __init__(
+        self,
+        cnv: Canvas,
+        points: Points,
+        offset_x: int = 0,
+        offset_y: int = 0,
+    ) -> None:
+        self.cnv = cnv
         self.initial_props = self.points = np.array(points, np.int32)
         self.translate(offset_x, offset_y)
 
@@ -164,11 +202,11 @@ class Figure(Utils):
 
     def draw(  # pylint: disable-msg=R0913
         self,
-        cnv,
         matrix: Matrix = None,
         stroke_width: int = None,
         stroke_color: str = None,
         fill_color: str = None,
+        cnv: Canvas = None,
     ) -> "Figure":
         """Draw figure"""
 
@@ -187,7 +225,7 @@ class Figure(Utils):
             fill_color = self.hex_to_rgb(fill_color)
 
         cv.polylines(  # pylint: disable-msg=E1101
-            cnv,
+            cnv if cnv is not None else self.cnv,
             [self.points],
             True,
             stroke_color,
@@ -195,7 +233,9 @@ class Figure(Utils):
         )
 
         if fill_color:
-            cv.fillPoly(cnv, [self.points], fill_color)  # pylint: disable-msg=E1101
+            cv.fillPoly(  # pylint: disable-msg=E1101
+                cnv if cnv is not None else self.cnv, [self.points], fill_color
+            )
 
         return self
 
@@ -219,8 +259,9 @@ class Oval(Figure):
 
     def __init__(  # pylint: disable-msg=R0913
         self,
-        width: int = 0,
-        height: int = 0,
+        cnv: Canvas,
+        width,
+        height,
         offset_x: int = 0,
         offset_y: int = 0,
         start: int = 0,
@@ -242,17 +283,18 @@ class Oval(Figure):
                 )
             ]
         )
-        super().__init__(points, offset_x, offset_y)
+        super().__init__(cnv, points, offset_x, offset_y)
 
 
 @dataclasses.dataclass
 class Rectangle(Figure):
     """Rectangle"""
 
-    def __init__(
+    def __init__(  # pylint: disable-msg=R0913
         self,
-        width: int = 0,
-        height: int = 0,
+        cnv: Canvas,
+        width,
+        height,
         offset_x: int = 0,
         offset_y: int = 0,
     ) -> None:
@@ -261,7 +303,7 @@ class Rectangle(Figure):
         p3 = (p2[0], p1[1] + height)
         p4 = (p1[0], p3[1])
 
-        super().__init__([p1, p2, p3, p4], offset_x, offset_y)
+        super().__init__(cnv, [p1, p2, p3, p4], offset_x, offset_y)
 
 
 @dataclasses.dataclass
@@ -270,22 +312,25 @@ class Polyline(Figure):
 
     # Needs fix: Should fix this
     def __init__(  # pylint: disable-msg=W0246
-        self, points: Points, offset_x: int = 0, offset_y: int = 0
+        self, cnv: Canvas, points: Points, offset_x: int = 0, offset_y: int = 0
     ) -> None:
-        super().__init__(points, offset_x, offset_y)
+        super().__init__(cnv, points, offset_x, offset_y)
 
 
 @dataclasses.dataclass
 class Line(Utils):
     """Line"""
 
+    def __init__(self, cnv: Canvas) -> None:
+        self.cnv = cnv
+
     def draw(  # pylint: disable-msg=R0913
         self,
-        cnv,
         start_point: Point,
         end_point: Point,
         stroke_color: str = None,
         stroke_width: int = None,
+        cnv: Canvas = None,
     ) -> None:
         """Draw line"""
 
@@ -296,7 +341,7 @@ class Line(Utils):
             stroke_width = int(round(stroke_width))
 
         cv.line(  # pylint: disable-msg=E1101
-            cnv,
+            cnv if cnv is not None else self.cnv,
             np.array(start_point, np.int32),
             np.array(end_point, np.int32),
             stroke_color,
@@ -328,10 +373,11 @@ def test():
     axis_offset = 150
     rotation_angle = 45
 
-    line = Line()
-    rect = Rectangle(width, height, axis_offset, axis_offset)
-    oval = Oval(width, height, axis_offset, axis_offset)
+    line = Line(cnv)
+    rect = Rectangle(cnv, width, height, axis_offset, axis_offset)
+    oval = Oval(cnv, width, height, axis_offset, axis_offset)
     polyline = Polyline(
+        cnv,
         [
             (0, 0),
             (-20, width / 2),
@@ -342,18 +388,16 @@ def test():
     )
 
     for i in range(0, cfg.cnv_props[0], 50):
-        line.draw(cnv, [0, i], [cfg.cnv_props[1], i], stroke_color="#00ff00")
-        line.draw(cnv, [i, 0], [i, cfg.cnv_props[0]], stroke_color="#00ff00")
+        line.draw([0, i], [cfg.cnv_props[1], i], stroke_color="#00ff00")
+        line.draw([i, 0], [i, cfg.cnv_props[0]], stroke_color="#00ff00")
 
     for i, fig in enumerate([rect, oval, polyline]):
         fig.draw(
-            cnv,
             stroke_width=2,
             stroke_color=cfg.color_palette[i % len(cfg.color_palette)],
             fill_color=cfg.color_palette[i % len(cfg.color_palette)],
         )
         fig.translate(300, 0).draw(
-            cnv,
             stroke_width=2,
             stroke_color=cfg.color_palette[i % len(cfg.color_palette)],
             fill_color=(
@@ -363,22 +407,18 @@ def test():
             ),
         )
         fig.translate(-300, 250).scale(1, 0.5).draw(
-            cnv,
             stroke_width=2,
             stroke_color=cfg.color_palette[i % len(cfg.color_palette)],
         )
         fig.translate(300, 50).rotate(-rotation_angle).draw(
-            cnv,
             stroke_width=2,
             stroke_color=cfg.color_palette[i % len(cfg.color_palette)],
         )
         fig.translate(-300, 150).rotate(rotation_angle).scale(0.5, 2).draw(
-            cnv,
             stroke_width=2,
             stroke_color=cfg.color_palette[i % len(cfg.color_palette)],
         )
         fig.draw(
-            cnv,
             [
                 [0.5, -np.sin(utils.deg_to_rads(rotation_angle)), 300],
                 [np.sin(utils.deg_to_rads(rotation_angle)), 0.1, 50],
@@ -387,9 +427,9 @@ def test():
             stroke_width=2,
             stroke_color=cfg.color_palette[i % len(cfg.color_palette)],
         )
-        fig.reset().translate(150, 900).draw(cnv, stroke_width=2)
+        fig.reset().translate(150, 900).draw(stroke_width=2)
         fig.scale(0.5, 1).rotate(rotation_angle * -2).translate(300, 0).draw(
-            cnv, stroke_width=2
+            stroke_width=2
         )
 
     cv.imshow("Common Canvas", cnv)  # pylint: disable-msg=E1101
