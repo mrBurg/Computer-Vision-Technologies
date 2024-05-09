@@ -5,7 +5,7 @@ from typing import Union
 import numpy as np
 import cv2 as cv
 
-__version__ = "2.0.0"
+__version__ = "2.0.1"
 
 Matrix = tuple[
     tuple[Union[int, float], Union[int, float], Union[int, float]],
@@ -203,7 +203,7 @@ class Figure(Utils):
     def draw(  # pylint: disable-msg=R0913
         self,
         matrix: Matrix = None,
-        stroke_width: int = None,
+        stroke_width: int = 0,
         stroke_color: str = None,
         fill_color: str = None,
         cnv: Canvas = None,
@@ -328,8 +328,8 @@ class Line(Utils):
         self,
         start_point: Point,
         end_point: Point,
-        stroke_color: str = None,
         stroke_width: int = None,
+        stroke_color: str = None,
         cnv: Canvas = None,
     ) -> None:
         """Draw line"""
