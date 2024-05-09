@@ -1,0 +1,5 @@
+{
+  "reportMissingImports": true,
+  "python.autoComplete.extraPaths": ["./libs"],
+  "python.analysis.extraPaths": ["./libs"]
+}

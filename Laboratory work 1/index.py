@@ -1,10 +1,21 @@
 """Laboratory work 1"""
 
+import sys
+import pathlib
 import dataclasses
 import numpy as np
 import cv2 as cv
 import matplotlib.pyplot as plt
-from figure_factory import Config, Utils, Oval, Rectangle, Polyline
+
+LIBS_PATH = pathlib.Path(__file__).parent.joinpath("../").resolve()
+
+sys.path.append(str(LIBS_PATH))
+
+try:
+    from figure_factory import Config, Utils, Oval, Rectangle, Polyline  # type: ignore
+except ImportError:
+    from libs.figure_factory import Config, Utils, Oval, Rectangle, Polyline
+
 
 cfg = Config()
 utils = Utils()
