@@ -5,7 +5,7 @@ from typing import Union
 import numpy as np
 import cv2 as cv
 
-__version__ = "2.0.0"
+__version__ = "2.0.1"
 
 Matrix = tuple[
     tuple[Union[int, float], Union[int, float], Union[int, float]],
@@ -71,7 +71,13 @@ class Utils:
         rgba = []
         hex_color = hex_color.replace("#", "")
 
-        if len(hex_color) == 8:
+        if len(hex_color) in (3, 4):
+            return self.hex_to_rgb(f"#{"".join([hex * 2 for hex in hex_color])}")
+
+        if len(hex_color) == 6:
+            for i in range(0, 5, 2):
+                rgba.insert(0, int(hex_color[i : i + 2], 16))
+        elif len(hex_color) == 8:
             for i in range(0, 7, 2):
                 color = int(hex_color[i : i + 2], 16)
 
@@ -82,9 +88,6 @@ class Utils:
                     break
 
                 rgba.insert(0, color)
-        elif len(hex_color) == 6:
-            for i in range(0, 5, 2):
-                rgba.insert(0, int(hex_color[i : i + 2], 16))
         else:
             rgba = [0, 0, 0, 1.0]
 
@@ -203,7 +206,7 @@ class Figure(Utils):
     def draw(  # pylint: disable-msg=R0913
         self,
         matrix: Matrix = None,
-        stroke_width: int = None,
+        stroke_width: int = 0,
         stroke_color: str = None,
         fill_color: str = None,
         cnv: Canvas = None,
@@ -328,8 +331,8 @@ class Line(Utils):
         self,
         start_point: Point,
         end_point: Point,
-        stroke_color: str = None,
         stroke_width: int = None,
+        stroke_color: str = None,
         cnv: Canvas = None,
     ) -> None:
         """Draw line"""
