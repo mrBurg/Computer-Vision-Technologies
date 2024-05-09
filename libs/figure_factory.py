@@ -5,7 +5,7 @@ from typing import Union
 import numpy as np
 import cv2 as cv
 
-__version__ = "2.0.1"
+__version__ = "2.1.1"
 
 Matrix = tuple[
     tuple[Union[int, float], Union[int, float], Union[int, float]],
@@ -33,7 +33,8 @@ class Config:
     """
 
     default_cnv_props = (1024, 768, 3)
-    color_palette = ["#ff0000ff", "#ff7400", "#009999", "#00cc00", "#cd0074"]
+    cnv_props = default_cnv_props
+    color_palette = ["#f00f", "#ff7400", "#099", "#0c0", "#cd0074"]
 
     def __init__(self, *props, depth: int = None) -> None:
         if len(props) == 1:
@@ -58,7 +59,7 @@ class Config:
             self.cnv_props = self.default_cnv_props
 
     def __str__(self) -> str:
-        return f"default_cnv_props: {self.default_cnv_props},\n\tcolor_palette: {self.color_palette}"  # pylint: disable-msg=C0301
+        return f"Default config:\n\tdefault_cnv_props: {self.default_cnv_props},\n\tcolor_palette: {self.color_palette}"  # pylint: disable-msg=C0301
 
 
 @dataclasses.dataclass
@@ -72,7 +73,7 @@ class Utils:
         hex_color = hex_color.replace("#", "")
 
         if len(hex_color) in (3, 4):
-            return self.hex_to_rgb(f"#{"".join([hex * 2 for hex in hex_color])}")
+            return self.hex_to_rgb(f"#{''.join([hex * 2 for hex in hex_color])}")
 
         if len(hex_color) == 6:
             for i in range(0, 5, 2):
@@ -105,18 +106,22 @@ class Utils:
 
 
 @dataclasses.dataclass
-class Figure(Utils):
+class Figure(Utils):  # pylint: disable-msg=R0902
     """Figure"""
 
-    axis_x = 0
-    axis_y = 0
+    axis_x: int = 0
+    axis_y: int = 0
+    stroke_width: int = 0
+    fill_color: str = None
+    stroke_color: str = None
+    initial_props = None
 
     def __init__(
         self,
         cnv: Canvas,
         points: Points,
-        offset_x: int = 0,
-        offset_y: int = 0,
+        offset_x: int = axis_x,
+        offset_y: int = axis_y,
     ) -> None:
         self.cnv = cnv
         self.initial_props = self.points = np.array(points, np.int32)
@@ -171,9 +176,7 @@ class Figure(Utils):
     def translate(self, tx: int, ty: int = None) -> "Figure":
         """Translate"""
 
-        if ty is None:
-            ty = tx
-
+        ty = tx if ty is None else ty
         self.axis_x += tx
         self.axis_y += ty
         self._apply_matrix(Figure.get_translate_matrix(tx, ty))
@@ -183,8 +186,7 @@ class Figure(Utils):
     def scale(self, sw: int, sh: int = None) -> "Figure":
         """Scale"""
 
-        if sh is None:
-            sh = sw
+        sh = sw if sh is None else sh
 
         self._apply_matrix(Figure.get_translate_matrix(-self.axis_x, -self.axis_y))
         self._apply_matrix(Figure.get_scale_matrix(sw, sh))
@@ -206,9 +208,9 @@ class Figure(Utils):
     def draw(  # pylint: disable-msg=R0913
         self,
         matrix: Matrix = None,
-        stroke_width: int = 0,
-        stroke_color: str = None,
-        fill_color: str = None,
+        stroke_width: int = False,
+        stroke_color: str = False,
+        fill_color: str = False,
         cnv: Canvas = None,
     ) -> "Figure":
         """Draw figure"""
@@ -218,26 +220,30 @@ class Figure(Utils):
             self._apply_matrix(matrix)
             self._apply_matrix(Figure.get_translate_matrix(self.axis_x, self.axis_y))
 
-        if stroke_width:
-            stroke_width = int(round(stroke_width))
+        if not isinstance(stroke_width, bool):
+            self.stroke_width = int(round(stroke_width)) if stroke_width else None
 
-        if stroke_color:
-            stroke_color = self.hex_to_rgb(stroke_color)
+        if not isinstance(stroke_color, bool):
+            self.stroke_color = self.hex_to_rgb(stroke_color) if stroke_color else None
 
-        if fill_color:
-            fill_color = self.hex_to_rgb(fill_color)
+        if not isinstance(fill_color, bool):
+            self.fill_color = self.hex_to_rgb(fill_color) if fill_color else None
 
         cv.polylines(  # pylint: disable-msg=E1101
             cnv if cnv is not None else self.cnv,
             [self.points],
             True,
-            stroke_color,
-            stroke_width * 2 if fill_color else stroke_width,
+            self.stroke_color,
+            (
+                self.stroke_width * 2
+                if self.fill_color and self.stroke_width
+                else self.stroke_width
+            ),
         )
 
-        if fill_color:
+        if self.fill_color:
             cv.fillPoly(  # pylint: disable-msg=E1101
-                cnv if cnv is not None else self.cnv, [self.points], fill_color
+                cnv if cnv is not None else self.cnv, [self.points], self.fill_color
             )
 
         return self
@@ -250,6 +256,9 @@ class Figure(Utils):
         self.axis_x = 0
         self.axis_y = 0
         self.points = self.initial_props
+        self.stroke_width = 0
+        self.fill_color = None
+        self.stroke_color = None
 
         return self
 
@@ -265,8 +274,8 @@ class Oval(Figure):
         cnv: Canvas,
         width,
         height,
-        offset_x: int = 0,
-        offset_y: int = 0,
+        offset_x: int = None,
+        offset_y: int = None,
         start: int = 0,
         end: int = 360,
         quality: float = 0.75,
@@ -298,8 +307,8 @@ class Rectangle(Figure):
         cnv: Canvas,
         width,
         height,
-        offset_x: int = 0,
-        offset_y: int = 0,
+        offset_x: int = None,
+        offset_y: int = None,
     ) -> None:
         p1 = (width / -2, height / -2)
         p2 = (p1[0] + width, p1[1])
@@ -313,9 +322,8 @@ class Rectangle(Figure):
 class Polyline(Figure):
     """Polyline"""
 
-    # Needs fix: Should fix this
-    def __init__(  # pylint: disable-msg=W0246
-        self, cnv: Canvas, points: Points, offset_x: int = 0, offset_y: int = 0
+    def __init__(
+        self, cnv: Canvas, points: Points, offset_x: int = None, offset_y: int = None
     ) -> None:
         super().__init__(cnv, points, offset_x, offset_y)
 
@@ -359,13 +367,13 @@ def test():
     utils = Utils()
 
     print("-" * 10)
-    print(f"Default config:\n\t{cfg}")
+    print(cfg)
     print(f"45 degrees in radians is equal to: {utils.deg_to_rads(45)}")
     print(
         f"0.7853981633974483 radians in degrees is equal to: {utils.rads_to_deg(0.7853981633974483)}"  # pylint: disable-msg=C0301
     )
     print(
-        f"Converting HEX #ff0000ff to RGB is equal to: {utils.hex_to_rgb('#ff0000ff')}"
+        f"Converting HEX #ff0000ff (#f00f) to RGB is equal to: {utils.hex_to_rgb('#f00f')}"
     )
     print("-" * 10)
 
@@ -391,35 +399,33 @@ def test():
     )
 
     for i in range(0, cfg.cnv_props[0], 50):
-        line.draw([0, i], [cfg.cnv_props[1], i], stroke_color="#00ff00")
-        line.draw([i, 0], [i, cfg.cnv_props[0]], stroke_color="#00ff00")
+        line.draw([0, i], [cfg.cnv_props[1], i], stroke_color="#0f0")
+        line.draw([i, 0], [i, cfg.cnv_props[0]], stroke_color="#0f0")
 
     for i, fig in enumerate([rect, oval, polyline]):
         fig.draw(
-            stroke_width=2,
-            stroke_color=cfg.color_palette[i % len(cfg.color_palette)],
             fill_color=cfg.color_palette[i % len(cfg.color_palette)],
         )
         fig.translate(300, 0).draw(
-            stroke_width=2,
-            stroke_color=cfg.color_palette[i % len(cfg.color_palette)],
+            stroke_width=4,
+            stroke_color=cfg.color_palette[(i + 1) % len(cfg.color_palette)],
             fill_color=(
                 cfg.color_palette[i % len(cfg.color_palette)]
                 if isinstance(fig, Polyline)
-                else "#ffffff"
+                else "#fff"
             ),
         )
         fig.translate(-300, 250).scale(1, 0.5).draw(
-            stroke_width=2,
+            stroke_width=4,
             stroke_color=cfg.color_palette[i % len(cfg.color_palette)],
+            fill_color=None,
         )
         fig.translate(300, 50).rotate(-rotation_angle).draw(
-            stroke_width=2,
-            stroke_color=cfg.color_palette[i % len(cfg.color_palette)],
+            stroke_width=4,
+            stroke_color=None,
         )
         fig.translate(-300, 150).rotate(rotation_angle).scale(0.5, 2).draw(
-            stroke_width=2,
-            stroke_color=cfg.color_palette[i % len(cfg.color_palette)],
+            stroke_width=None
         )
         fig.draw(
             [
@@ -427,12 +433,13 @@ def test():
                 [np.sin(utils.deg_to_rads(rotation_angle)), 0.1, 50],
                 [0, 0, 1],
             ],
-            stroke_width=2,
-            stroke_color=cfg.color_palette[i % len(cfg.color_palette)],
+            fill_color=(cfg.color_palette[i % len(cfg.color_palette)]),
         )
-        fig.reset().translate(150, 900).draw(stroke_width=2)
+        fig.reset().translate(150, 900).draw(
+            stroke_width=2,
+        )
         fig.scale(0.5, 1).rotate(rotation_angle * -2).translate(300, 0).draw(
-            stroke_width=2
+            stroke_width=None
         )
 
     cv.imshow("Common Canvas", cnv)  # pylint: disable-msg=E1101
