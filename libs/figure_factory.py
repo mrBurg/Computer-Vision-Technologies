@@ -17,13 +17,39 @@ Points = list[tuple[*Point, int]]
 
 @dataclasses.dataclass
 class Config:
-    """Config"""
+    """
+    Config
+    args: [[[ width:int ], height:int ], depth:int ]
+        - If passed as a single integer, represents the same value for both width and height, and the depth is determined by the `depth` argument or by default if argument `depth` is missing
+        - If passed two integers, represents (width, height), and the depth is determined by the `depth` argument or by default if argument `depth` is missing
+        - If passed three integers, represents (width, height, depth), but the depth is determined by the `depth` argument or the value passed if argument `depth` is missing
+    depth: int, optional
+        - If the value of depth goes beyond 1 to 4 inclusive, it changes to the nearest limit.
+    """
 
     default_cnv_props = (1024, 768, 3)
     color_palette = ["#ff0000ff", "#ff7400", "#009999", "#00cc00", "#cd0074"]
 
-    def __init__(self, cnv_props: tuple[int, int, int] = None) -> None:
-        if cnv_props is None:
+    def __init__(self, *props, depth: int = None) -> None:
+        if len(props) == 1:
+            self.cnv_props = (
+                props[0],
+                props[0],
+                max(1, min(depth if depth else self.default_cnv_props[2], 4)),
+            )
+        elif len(props) == 2:
+            self.cnv_props = (
+                props[0],
+                props[1],
+                max(1, min(depth if depth else self.default_cnv_props[2], 4)),
+            )
+        elif len(props) == 3:
+            self.cnv_props = (
+                props[0],
+                props[1],
+                max(1, min(depth if depth else props[2], 4)),
+            )
+        else:
             self.cnv_props = self.default_cnv_props
 
     def __str__(self) -> str:
