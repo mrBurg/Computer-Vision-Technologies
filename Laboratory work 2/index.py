@@ -2,8 +2,7 @@
 
 import sys
 import pathlib
-
-# import time
+import time
 import numpy as np
 import cv2 as cv
 
@@ -22,9 +21,28 @@ cnv = np.full(cfg.cnv_props, 255, dtype=np.uint8)
 
 CX = cfg.cnv_props[1] / 2
 
-polyline = Polyline(cnv, [[0, 0], [-20, 100], [20, 100]], CX, 600).draw(cnv=cnv)
+polyline = Polyline(cnv, [[0, -150], [-20, 0], [0, 50], [20, 0]], CX, 600).draw(
+    fill_color="#abc", stroke_color="#cba", stroke_width=5
+)
 
-print(cfg.cnv_props)
+# polyline.rotate(45).draw()
+
+
+for i in range(10):
+    # print("Time")
+    polyline.rotate(18).draw()
+    # time.sleep(0.5)
+
+# print(cfg.cnv_props)
+cv.imshow("Common Canvas", cnv)  # pylint: disable-msg=E1101
+cv.waitKey(0)  # pylint: disable-msg=E1101
+cv.destroyAllWindows()  # pylint: disable-msg=E1101
+
+# while True:
+#     time.sleep(1)
+#     print(time)
+#     polyline.rotate(5).draw()
+
 
 # cfg = Config(800, 800)
 # utils = Utils()
@@ -60,7 +78,3 @@ print(cfg.cnv_props)
 #     stroke_width=5,
 #     fill_color="#ffffff",
 # )
-
-cv.imshow("Common Canvas", cnv)  # pylint: disable-msg=E1101
-cv.waitKey(0)  # pylint: disable-msg=E1101
-cv.destroyAllWindows()  # pylint: disable-msg=E1101

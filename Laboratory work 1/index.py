@@ -43,9 +43,7 @@ for i in range(4):
         stroke_width=5,
     ).rotate(90)
 
-Oval(cnv, 50, 50, CX, 600).draw(
-    stroke_color="#000000", stroke_width=5, fill_color="#ffffff"
-)
+Oval(cnv, 50, 50, CX, 600).draw(stroke_color="#000", stroke_width=5, fill_color="#fff")
 
 cv.imshow("Common Canvas", cnv)  # pylint: disable-msg=E1101
 cv.waitKey(0)  # pylint: disable-msg=E1101
