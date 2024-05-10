@@ -114,14 +114,14 @@ class Figure(Utils):  # pylint: disable-msg=R0902
     stroke_width: int = 0
     fill_color: str = None
     stroke_color: str = None
-    initial_props = None
+    initial_props: Points = None
 
     def __init__(
         self,
         cnv: Canvas,
         points: Points,
-        offset_x: int = axis_x,
-        offset_y: int = axis_y,
+        offset_x: int,
+        offset_y: int,
     ) -> None:
         self.cnv = cnv
         self.initial_props = self.points = np.array(points, np.int32)
@@ -272,10 +272,10 @@ class Oval(Figure):
     def __init__(  # pylint: disable-msg=R0913
         self,
         cnv: Canvas,
-        width,
-        height,
-        offset_x: int = None,
-        offset_y: int = None,
+        width: int,
+        height: int,
+        offset_x: int = 0,
+        offset_y: int = 0,
         start: int = 0,
         end: int = 360,
         quality: float = 0.75,
@@ -307,8 +307,8 @@ class Rectangle(Figure):
         cnv: Canvas,
         width,
         height,
-        offset_x: int = None,
-        offset_y: int = None,
+        offset_x: int = 0,
+        offset_y: int = 0,
     ) -> None:
         p1 = (width / -2, height / -2)
         p2 = (p1[0] + width, p1[1])
@@ -323,41 +323,65 @@ class Polyline(Figure):
     """Polyline"""
 
     def __init__(
-        self, cnv: Canvas, points: Points, offset_x: int = None, offset_y: int = None
+        self, cnv: Canvas, points: Points, offset_x: int = 0, offset_y: int = 0
     ) -> None:
         super().__init__(cnv, points, offset_x, offset_y)
 
 
 @dataclasses.dataclass
-class Line(Utils):
+class Line(Figure):
     """Line"""
 
-    def __init__(self, cnv: Canvas) -> None:
-        self.cnv = cnv
+    points = []
 
-    def draw(  # pylint: disable-msg=R0913
-        self,
-        start_point: Point,
-        end_point: Point,
-        stroke_width: int = None,
-        stroke_color: str = None,
-        cnv: Canvas = None,
+    def __init__(
+        self, cnv: Canvas, point: Point, offset_x: int = 0, offset_y: int = 0
     ) -> None:
-        """Draw line"""
+        np.append(self.points, point)
 
-        if stroke_color:
-            stroke_color = self.hex_to_rgb(stroke_color)
-
-        if stroke_width:
-            stroke_width = int(round(stroke_width))
-
-        cv.line(  # pylint: disable-msg=E1101
-            cnv if cnv is not None else self.cnv,
-            np.array(start_point, np.int32),
-            np.array(end_point, np.int32),
-            stroke_color,
-            stroke_width,
+        # print(self.points)
+        # self.points.append(point)
+        super().__init__(
+            cnv,
+            [point],
+            offset_x,
+            offset_y,
         )
+
+    # def add(
+    #     self,
+    #     point: Point,
+    #     stroke_width: int = None,
+    #     stroke_color: str = None,
+    #     cnv: Canvas = None,
+    # ) -> None:
+    #     self.points.append(point)
+    #     print(self.points)
+    #     super().draw()
+
+    # def draw(  # pylint: disable-msg=R0913
+    #     self,
+    #     start_point: Point,
+    #     end_point: Point,
+    #     stroke_width: int = None,
+    #     stroke_color: str = None,
+    #     cnv: Canvas = None,
+    # ) -> None:
+    #     """Draw line"""
+
+    #     if stroke_color:
+    #         stroke_color = self.hex_to_rgb(stroke_color)
+
+    #     if stroke_width:
+    #         stroke_width = int(round(stroke_width))
+
+    #     cv.line(  # pylint: disable-msg=E1101
+    #         cnv if cnv is not None else self.cnv,
+    #         np.array(start_point, np.int32),
+    #         np.array(end_point, np.int32),
+    #         stroke_color,
+    #         stroke_width,
+    #     )
 
 
 def test():
@@ -384,7 +408,7 @@ def test():
     axis_offset = 150
     rotation_angle = 45
 
-    line = Line(cnv)
+    line = Line(cnv, [0, 0], axis_offset, axis_offset)
     rect = Rectangle(cnv, width, height, axis_offset, axis_offset)
     oval = Oval(cnv, width, height, axis_offset, axis_offset)
     polyline = Polyline(
@@ -398,11 +422,11 @@ def test():
         axis_offset,
     )
 
-    for i in range(0, cfg.cnv_props[0], 50):
-        line.draw([0, i], [cfg.cnv_props[1], i], stroke_color="#0f0")
-        line.draw([i, 0], [i, cfg.cnv_props[0]], stroke_color="#0f0")
+    # for i in range(0, cfg.cnv_props[0], 50):
+    #     line.draw([0, i], [cfg.cnv_props[1], i], stroke_color="#0f0")
+    #     line.draw([i, 0], [i, cfg.cnv_props[0]], stroke_color="#0f0")
 
-    for i, fig in enumerate([rect, oval, polyline]):
+    for i, fig in enumerate([rect, oval, polyline, line]):
         fig.draw(
             fill_color=cfg.color_palette[i % len(cfg.color_palette)],
         )
