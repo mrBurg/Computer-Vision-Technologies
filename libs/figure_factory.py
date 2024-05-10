@@ -59,7 +59,7 @@ class Config:
             self.cnv_props = self.default_cnv_props
 
     def __str__(self) -> str:
-        return f"Default config:\n\tdefault_cnv_props: {self.default_cnv_props},\n\tcolor_palette: {self.color_palette}"  # pylint: disable-msg=C0301
+        return f"Default config:\n\tdefault_cnv_props: {self.default_cnv_props},\n\tcolor_palette: {self.color_palette}"  # pylint: disable=C0301
 
 
 @dataclasses.dataclass
@@ -106,7 +106,7 @@ class Utils:
 
 
 @dataclasses.dataclass
-class Figure(Utils):  # pylint: disable-msg=R0902
+class Figure(Utils):  # pylint: disable=R0902
     """Figure"""
 
     axis_x: int = 0
@@ -120,8 +120,8 @@ class Figure(Utils):  # pylint: disable-msg=R0902
         self,
         cnv: Canvas,
         points: Points,
-        offset_x: int,
-        offset_y: int,
+        offset_x: int = axis_x,
+        offset_y: int = axis_y,
     ) -> None:
         self.cnv = cnv
         self.initial_props = self.points = np.array(points, np.int32)
@@ -205,7 +205,7 @@ class Figure(Utils):  # pylint: disable-msg=R0902
 
         return self
 
-    def draw(  # pylint: disable-msg=R0913
+    def draw(  # pylint: disable=R0913
         self,
         matrix: Matrix = None,
         stroke_width: int = False,
@@ -226,25 +226,34 @@ class Figure(Utils):  # pylint: disable-msg=R0902
         if not isinstance(stroke_color, bool):
             self.stroke_color = self.hex_to_rgb(stroke_color) if stroke_color else None
 
-        if not isinstance(fill_color, bool):
-            self.fill_color = self.hex_to_rgb(fill_color) if fill_color else None
-
-        cv.polylines(  # pylint: disable-msg=E1101
-            cnv if cnv is not None else self.cnv,
-            [self.points],
-            True,
-            self.stroke_color,
-            (
-                self.stroke_width * 2
-                if self.fill_color and self.stroke_width
-                else self.stroke_width
-            ),
-        )
-
-        if self.fill_color:
-            cv.fillPoly(  # pylint: disable-msg=E1101
-                cnv if cnv is not None else self.cnv, [self.points], self.fill_color
+        if isinstance(self, Line):
+            cv.line(
+                cnv if cnv is not None else self.cnv,
+                self.points[0],
+                self.points[1],
+                self.stroke_color,
+                self.stroke_width,
             )
+        else:
+            if not isinstance(fill_color, bool):
+                self.fill_color = self.hex_to_rgb(fill_color) if fill_color else None
+
+            cv.polylines(  # pylint: disable=E1101
+                cnv if cnv is not None else self.cnv,
+                [self.points],
+                True,
+                self.stroke_color,
+                (
+                    self.stroke_width * 2
+                    if self.fill_color and self.stroke_width
+                    else self.stroke_width
+                ),
+            )
+
+            if self.fill_color:
+                cv.fillPoly(  # pylint: disable=E1101
+                    cnv if cnv is not None else self.cnv, [self.points], self.fill_color
+                )
 
         return self
 
@@ -269,7 +278,7 @@ class Oval(Figure):
 
     # Needs TODO: change to cv2.ellipse(cnv, (200, 200), (100, 50), 45, 0, 90, (255, 0, 0), 1)
 
-    def __init__(  # pylint: disable-msg=R0913
+    def __init__(  # pylint: disable=R0913
         self,
         cnv: Canvas,
         width: int,
@@ -302,7 +311,7 @@ class Oval(Figure):
 class Rectangle(Figure):
     """Rectangle"""
 
-    def __init__(  # pylint: disable-msg=R0913
+    def __init__(  # pylint: disable=R0913
         self,
         cnv: Canvas,
         width,
@@ -332,56 +341,38 @@ class Polyline(Figure):
 class Line(Figure):
     """Line"""
 
-    points = []
-
-    def __init__(
-        self, cnv: Canvas, point: Point, offset_x: int = 0, offset_y: int = 0
+    def __init__(  # pylint: disable=R0913
+        self,
+        cnv: Canvas,
+        point1: Point,
+        point2: Point,
+        stroke_width: str = 0,
+        stroke_color: str = None,
     ) -> None:
-        np.append(self.points, point)
+        super().__init__(cnv, [point1, point2])
+        super().draw(stroke_width=stroke_width, stroke_color=stroke_color, cnv=cnv)
 
-        # print(self.points)
-        # self.points.append(point)
-        super().__init__(
-            cnv,
-            [point],
-            offset_x,
-            offset_y,
-        )
+    def draw(  # pylint: disable=R0913, W0221, W0237
+        self,
+        start_point: Point,
+        end_point: Point,
+        matrix: Matrix = None,
+        stroke_width: int = False,
+        stroke_color: str = False,
+        cnv: Canvas = None,
+    ) -> None:
+        """Draw line"""
 
-    # def add(
-    #     self,
-    #     point: Point,
-    #     stroke_width: int = None,
-    #     stroke_color: str = None,
-    #     cnv: Canvas = None,
-    # ) -> None:
-    #     self.points.append(point)
-    #     print(self.points)
-    #     super().draw()
+        self.points = np.array([start_point, end_point], np.int32)
 
-    # def draw(  # pylint: disable-msg=R0913
-    #     self,
-    #     start_point: Point,
-    #     end_point: Point,
-    #     stroke_width: int = None,
-    #     stroke_color: str = None,
-    #     cnv: Canvas = None,
-    # ) -> None:
-    #     """Draw line"""
+        super().draw(matrix, stroke_width, stroke_color, cnv=cnv)
 
-    #     if stroke_color:
-    #         stroke_color = self.hex_to_rgb(stroke_color)
+        return self
 
-    #     if stroke_width:
-    #         stroke_width = int(round(stroke_width))
+    def add(self, x: int, y: int) -> None:
+        """Add line"""
 
-    #     cv.line(  # pylint: disable-msg=E1101
-    #         cnv if cnv is not None else self.cnv,
-    #         np.array(start_point, np.int32),
-    #         np.array(end_point, np.int32),
-    #         stroke_color,
-    #         stroke_width,
-    #     )
+        self.draw(self.points[1], [self.points[1][0] + x, self.points[1][0] + y])
 
 
 def test():
@@ -394,7 +385,7 @@ def test():
     print(cfg)
     print(f"45 degrees in radians is equal to: {utils.deg_to_rads(45)}")
     print(
-        f"0.7853981633974483 radians in degrees is equal to: {utils.rads_to_deg(0.7853981633974483)}"  # pylint: disable-msg=C0301
+        f"0.7853981633974483 radians in degrees is equal to: {utils.rads_to_deg(0.7853981633974483)}"  # pylint: disable=C0301
     )
     print(
         f"Converting HEX #ff0000ff (#f00f) to RGB is equal to: {utils.hex_to_rgb('#f00f')}"
@@ -408,9 +399,8 @@ def test():
     axis_offset = 150
     rotation_angle = 45
 
-    line = Line(cnv, [0, 0], axis_offset, axis_offset)
-    rect = Rectangle(cnv, width, height, axis_offset, axis_offset)
     oval = Oval(cnv, width, height, axis_offset, axis_offset)
+    rect = Rectangle(cnv, width, height, axis_offset, axis_offset)
     polyline = Polyline(
         cnv,
         [
@@ -422,11 +412,11 @@ def test():
         axis_offset,
     )
 
-    # for i in range(0, cfg.cnv_props[0], 50):
-    #     line.draw([0, i], [cfg.cnv_props[1], i], stroke_color="#0f0")
-    #     line.draw([i, 0], [i, cfg.cnv_props[0]], stroke_color="#0f0")
+    for i in range(0, cfg.cnv_props[0], 50):
+        Line(cnv, [0, i], [cfg.cnv_props[1], i], stroke_color="#0f0")
+        Line(cnv, [i, 0], [i, cfg.cnv_props[0]], stroke_color="#0f0")
 
-    for i, fig in enumerate([rect, oval, polyline, line]):
+    for i, fig in enumerate([rect, oval, polyline]):
         fig.draw(
             fill_color=cfg.color_palette[i % len(cfg.color_palette)],
         )
@@ -466,9 +456,17 @@ def test():
             stroke_width=None
         )
 
-    cv.imshow("Common Canvas", cnv)  # pylint: disable-msg=E1101
-    cv.waitKey(0)  # pylint: disable-msg=E1101
-    cv.destroyAllWindows()  # pylint: disable-msg=E1101
+    line = Line(cnv, [150, 150], [200, 200], 4, cfg.color_palette[4])
+    line.draw(
+        [50, 50],
+        [100, 100],
+        stroke_width=4,
+        stroke_color="fff",
+    ).add(50, 0)
+
+    cv.imshow("Common Canvas", cnv)  # pylint: disable=E1101
+    cv.waitKey(0)  # pylint: disable=E1101
+    cv.destroyAllWindows()  # pylint: disable=E1101
 
 
 if __name__ == "__main__":
