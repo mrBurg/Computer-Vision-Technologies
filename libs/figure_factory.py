@@ -32,7 +32,7 @@ class Config:
     If there are no arguments, the default settings are taken (width=1024, height=768, depth=3)
     """
 
-    default_cnv_props = (1024, 768, 3)
+    default_cnv_props = 1024, 768, 3
     cnv_props = default_cnv_props
     color_palette = ["#f00f", "#ff7400", "#099", "#0c0", "#cd0074"]
 
@@ -43,6 +43,7 @@ class Config:
                 props[0],
                 max(1, min(depth if depth else self.default_cnv_props[2], 4)),
             )
+
         elif len(props) == 2:
             self.cnv_props = (
                 props[0],
@@ -93,6 +94,11 @@ class Utils:
             rgba = [0, 0, 0, 1.0]
 
         return tuple(rgba)
+
+    # def color_rgb(r, g, b):
+    #     """r,g,b are intensities of red, green, and blue in range(256)
+    #     Returns color specifier string for the resulting color"""
+    #     return "#%02x%02x%02x" % (r, g, b)
 
     def deg_to_rads(self, deg: float) -> float:
         """Converts degrees to radians"""
