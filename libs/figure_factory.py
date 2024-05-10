@@ -95,10 +95,9 @@ class Utils:
 
         return tuple(rgba)
 
-    # def color_rgb(r, g, b):
-    #     """r,g,b are intensities of red, green, and blue in range(256)
-    #     Returns color specifier string for the resulting color"""
-    #     return "#%02x%02x%02x" % (r, g, b)
+    def rgb_to_hex(self, r, g, b):
+        """Converts a RGB color to HEX"""
+        return "#%02x%02x%02x" % (r, g, b)
 
     def deg_to_rads(self, deg: float) -> float:
         """Converts degrees to radians"""
