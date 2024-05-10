@@ -133,6 +133,9 @@ class Figure(Utils):  # pylint: disable=R0902
         self.initial_props = self.points = np.array(points, np.int32)
         self.translate(offset_x, offset_y)
 
+    def __str__(self) -> str:
+        return f"axis X:{self.axis_x}, axis Y: {self.axis_y}"  # pylint: disable=C0301
+
     @staticmethod
     def get_translate_matrix(tx: int, ty: int) -> Matrix:
         """Returns translate matrix"""

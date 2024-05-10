@@ -3,9 +3,8 @@
 import sys
 import pathlib
 import time
-
-# import numpy as np
-# import cv2 as cv
+import numpy as np
+import cv2 as cv
 
 
 LIBS_PATH = pathlib.Path(__file__).parent.joinpath("../").resolve()
@@ -13,99 +12,91 @@ LIBS_PATH = pathlib.Path(__file__).parent.joinpath("../").resolve()
 sys.path.append(str(LIBS_PATH))
 
 try:
-    from figure_factory import Config, Oval  # type: ignore
+    from figure_factory import Config, Utils, Line, Oval  # type: ignore
 except ImportError:
-    from libs.figure_factory import Config, Oval
+    from libs.figure_factory import Config, Utils, Line, Oval
 
-try:
-    from graphics import GraphWin  # type: ignore
-except ImportError:
-    from libs.graphics import GraphWin
+cfg = Config(800)
+utils = Utils()
 
-cfg = Config()
+cnv = np.full(cfg.cnv_props, 255, dtype=np.uint8)
 
-print(cfg.cnv_props[0], cfg.cnv_props[1])
+CX = cfg.cnv_props[0] / 2
+CY = cfg.cnv_props[1] / 2
+SEC_SIZE = 300
+HOUR_SIZE = 100
+MIN_SIZE = 200
+INCLINE = 180
 
-# win = GraphWin(cfg.cnv_props[0], cfg.cnv_props[1], "Window")
-cnv = GraphWin("Window", cfg.cnv_props[0], cfg.cnv_props[1])
+current_time = time.localtime(time.time())
 
-# print(win)
+line = Line(
+    cnv,
+    [CX, CY],
+    [
+        np.sin(utils.deg_to_rads(-current_time.tm_sec)) * SEC_SIZE + CX,
+        np.cos(utils.deg_to_rads(-current_time.tm_sec)) * SEC_SIZE + CX,
+    ],
+    4,
+    cfg.color_palette[4],
+)
+oval = Oval(cnv, 50, 50, CX, CY, quality=1)
+COUNT = 0
 
-CX = cfg.cnv_props[1] / 2
+# cv.namedWindow("Analog clock")  # pylint: disable=E1101
 
-oval = Oval(cnv, 300, 200, CX, 130, quality=1)
+while True:
+    cnv.fill(255)
+    # cnv[:] = utils.hex_to_rgb("#1f1f1f")
 
-for i in range(30):
-    time.sleep(0.3)
-    oval.draw()
-cnv.getMouse()
-cnv.close()
+    current_time = time.localtime(time.time())
 
-# win = GraphWin("2-D проекции в библиотеке graphics", 800, 600)
-# win.setBackground("white")
+    print(f"{current_time.tm_hour}:{current_time.tm_min}:{current_time.tm_sec}")
 
-# win.getMouse()
-# win.close()
+    line.draw(
+        [CX, CY],
+        [
+            np.sin(utils.deg_to_rads(-current_time.tm_sec * 6 + INCLINE)) * SEC_SIZE
+            + CX,
+            np.cos(utils.deg_to_rads(-current_time.tm_sec * 6 + INCLINE)) * SEC_SIZE
+            + CX,
+        ],
+        stroke_width=4,
+        stroke_color="#f00",
+    )
+    line.draw(
+        [CX, CY],
+        [
+            np.sin(utils.deg_to_rads((-current_time.tm_hour) * 12 + INCLINE))
+            * HOUR_SIZE
+            + CX,
+            np.cos(utils.deg_to_rads((-current_time.tm_hour) * 12 + INCLINE))
+            * HOUR_SIZE
+            + CX,
+        ],
+        stroke_width=20,
+        stroke_color="#000",
+    )
+    line.draw(
+        [CX, CY],
+        [
+            np.sin(utils.deg_to_rads(-current_time.tm_min * 6 + INCLINE)) * MIN_SIZE
+            + CX,
+            np.cos(utils.deg_to_rads(-current_time.tm_min * 6 + INCLINE)) * MIN_SIZE
+            + CX,
+        ],
+        stroke_width=10,
+        stroke_color="#ccc",
+    )
+    COUNT += 1
+    oval.draw(stroke_width=5, stroke_color="#000", fill_color="#fff")
 
+    cv.imshow("Animation 'q' for stop", cnv)  # pylint: disable=E1101
 
-# cnv = np.full(cfg.cnv_props, 255, dtype=np.uint8)
+    time.sleep(1)
 
-# CX = cfg.cnv_props[1] / 2
+    if cv.waitKey(1) & 0xFF == ord("q"):  # pylint: disable=E1101
+        break
 
-# polyline = Polyline(cnv, [[0, -150], [-20, 0], [0, 50], [20, 0]], CX, 600).draw(
-#     fill_color="#abc", stroke_color="#cba", stroke_width=5
-# )
-
-# polyline.rotate(45).draw()
-
-
-# for i in range(10):
-#     # print("Time")
-#     polyline.rotate(18).draw()
-#     # time.sleep(0.5)
-
-# # print(cfg.cnv_props)
-# cv.imshow("Common Canvas", cnv)  # pylint: disable-msg=E1101
-# cv.waitKey(0)  # pylint: disable-msg=E1101
-# cv.destroyAllWindows()  # pylint: disable-msg=E1101
-
-# while True:
-#     time.sleep(1)
-#     print(time)
-#     polyline.rotate(5).draw()
-
-
-# cfg = Config(800, 800)
-# utils = Utils()
-
-# cnv = np.full(cfg.cnv_props, 255, dtype=np.uint8)
-
-# CX = cfg.cnv_props[1] / 2
-
-# oval = Oval(300, 200, CX, 130, quality=1)
-# rect = Rectangle(400, 200, CX, 300)
-
-# for fig in [oval, rect]:
-#     for i in range(5):
-#         fig.scale(0.8, 0.8).draw(
-#             cnv,
-#             stroke_color=cfg.color_palette[i % len(cfg.color_palette)],
-#             stroke_width=2,
-#         )
-
-# polyline = Polyline([[0, 0], [-20, 100], [20, 100]], CX, 600).scale(4, 1.5)
-
-# for i in range(4):
-#     polyline.draw(
-#         cnv,
-#         fill_color=cfg.color_palette[(i + 1) % len(cfg.color_palette)],
-#         stroke_color=cfg.color_palette[i % len(cfg.color_palette)],
-#         stroke_width=5,
-#     ).rotate(90)
-
-# Oval(50, 50, CX, 600).draw(
-#     cnv,
-#     stroke_color="#000000",
-#     stroke_width=5,
-#     fill_color="#ffffff",
-# )
+cv.waitKey(0)
+cv.destroyAllWindows()
