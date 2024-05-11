@@ -48,7 +48,7 @@ def get_random_point_props() -> dict[str, tuple[float, float] | int]:
     }
 
 
-points = [get_random_point_props() for point in range(3)]
+points = [get_random_point_props() for _ in range(3)]
 PADDING = 20
 
 p_line = Polyline(cnv, [point["coords"] for point in points])
@@ -60,18 +60,20 @@ def draw_triangle() -> None:
     new_points = []
 
     for point in points:
+        coords = point["coords"]
+
         if (
-            point["coords"][0] <= PADDING
-            or point["coords"][0] >= cfg.cnv_props[1] - PADDING
-            or point["coords"][1] <= PADDING
-            or point["coords"][1] >= cfg.cnv_props[0] - PADDING
+            coords[0] <= PADDING
+            or coords[0] >= cfg.cnv_props[1] - PADDING
+            or coords[1] <= PADDING
+            or coords[1] >= cfg.cnv_props[0] - PADDING
         ):
             point["direction"] *= -1
             point["steps"][0] = 1 + random() * 5
             point["steps"][1] = 1 + random() * 5
 
-        point["coords"][0] += point["steps"][0] * point["direction"]
-        point["coords"][1] += point["steps"][1] * point["direction"]
+        coords[0] += point["steps"][0] * point["direction"]
+        coords[1] += point["steps"][1] * point["direction"]
 
         new_points.append(point)
 
