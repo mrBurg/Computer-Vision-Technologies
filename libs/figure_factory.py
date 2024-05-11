@@ -1,11 +1,12 @@
 """Figure Factory"""
 
 import dataclasses
-from typing import Union
+import time
+from typing import Union, Callable
 import numpy as np
 import cv2 as cv
 
-__version__ = "2.2.0"
+__version__ = "2.3.0"
 
 Cell = Union[int, float]
 
@@ -74,7 +75,8 @@ class Config:
 class Utils:
     """Utils"""
 
-    def hex_to_rgb(self, hex_str: str) -> RGBA:
+    @staticmethod
+    def hex_to_rgb(hex_str: str) -> RGBA:
         """Converts a HEX color to RGB"""
 
         # r = int(hex_str[0:2], 16)
@@ -86,7 +88,7 @@ class Utils:
         hex_str = hex_str.lstrip("#")
 
         if len(hex_str) in (3, 4):
-            return self.hex_to_rgb(f"#{''.join([hex * 2 for hex in hex_str])}")
+            return Utils.hex_to_rgb(f"#{''.join([hex * 2 for hex in hex_str])}")
 
         if len(hex_str) == 6:
             for i in range(0, 5, 2):
@@ -107,20 +109,35 @@ class Utils:
 
         return tuple(rgba)
 
-    def rgb_to_hex(self, r: int, g: int, b: int, a: int = 255):
+    @staticmethod
+    def rgb_to_hex(r: int, g: int, b: int, a: int = 255):
         """Converts a RGB color to HEX"""
 
         return f"#{r:02x}{g:02x}{b:02x}{a:02x}"  # "#%02x%02x%02x" % (r, g, b)
 
-    def deg_to_rads(self, deg: float) -> float:
+    @staticmethod
+    def deg_to_rads(deg: float) -> float:
         """Converts degrees to radians"""
 
         return deg * np.pi / 180.0
 
-    def rads_to_deg(self, rad: float) -> float:
+    @staticmethod
+    def rads_to_deg(rad: float) -> float:
         """Converts radians to degrees"""
 
         return rad * 180 / np.pi
+
+    @staticmethod
+    def animate(animation: Callable[[], None], speed: float = 0.01) -> float:
+        """Converts radians to degrees"""
+
+        while True:
+            in_action = animation()
+
+            if not in_action:
+                break
+
+            time.sleep(speed)
 
 
 @dataclasses.dataclass
@@ -231,6 +248,11 @@ class Figure(Utils):  # pylint: disable=R0902
         self.x = mx
         self.y = my
         self._apply_matrix(Figure.get_translate_matrix(self.x, self.y))
+
+        return self
+
+    def morph(self) -> "Figure":
+        """morph"""
 
         return self
 
@@ -441,9 +463,11 @@ def test():
         Line(cnv, [i, 0], [i, cfg.cnv_props[0]], stroke_color="#0f0")
 
     for i, fig in enumerate([rect, oval, polyline]):
+        # 1
         fig.draw(
             fill_color=cfg.color_palette[i % len(cfg.color_palette)],
         )
+        # 2
         fig.translate(300, 0).draw(
             stroke_width=4,
             stroke_color=cfg.color_palette[(i + 1) % len(cfg.color_palette)],
@@ -453,18 +477,22 @@ def test():
                 else "#fff"
             ),
         )
+        # 3
         fig.translate(-300, 250).scale(1, 0.5).draw(
             stroke_width=4,
             stroke_color=cfg.color_palette[i % len(cfg.color_palette)],
             fill_color=None,
         )
+        # 4
         fig.translate(300, 50).rotate(-rotation_angle).draw(
             stroke_width=4,
             stroke_color=None,
         )
+        # 5
         fig.translate(-300, 150).rotate(rotation_angle).scale(0.5, 2).draw(
             stroke_width=None
         )
+        # 6
         fig.draw(
             [
                 [0.5, -np.sin(utils.deg_to_rads(rotation_angle)), 300],
@@ -473,12 +501,15 @@ def test():
             ],
             fill_color=(cfg.color_palette[i % len(cfg.color_palette)]),
         )
+        # 7
         fig.reset().translate(150, 900).draw(
             stroke_width=2,
         )
+        # 8
         fig.scale(0.5, 1).rotate(rotation_angle * -2).translate(300, 0).draw(
             stroke_width=None
         )
+        # 9
         fig.move(650, cfg.cnv_props[0] / 2).draw()
 
     line = Line(cnv, [150, 150], [200, 200], 4, cfg.color_palette[4])
