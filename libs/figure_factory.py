@@ -17,7 +17,7 @@ Matrix = tuple[
 ]
 RGBA = tuple[int, int, int, float]
 Point = tuple[float, float]
-Points = tuple[tuple[*Point, int]]
+Points = tuple[Point]
 Canvas = tuple[int, tuple[int, int | None] | None]
 
 
@@ -251,8 +251,10 @@ class Figure(Utils):  # pylint: disable=R0902
 
         return self
 
-    def morph(self) -> "Figure":
-        """morph"""
+    def morph(self, points: Points) -> "Figure":
+        """Morph"""
+
+        self.points = points
 
         return self
 
