@@ -107,10 +107,10 @@ class Utils:
 
         return tuple(rgba)
 
-    def rgb_to_hex(self, r, g, b):
+    def rgb_to_hex(self, r: int, g: int, b: int, a: int = 255):
         """Converts a RGB color to HEX"""
 
-        return f"#{r:02x}{g:02x}{b:02x}"  # "#%02x%02x%02x" % (r, g, b)
+        return f"#{r:02x}{g:02x}{b:02x}{a:02x}"  # "#%02x%02x%02x" % (r, g, b)
 
     def deg_to_rads(self, deg: float) -> float:
         """Converts degrees to radians"""
