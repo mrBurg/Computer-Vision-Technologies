@@ -88,7 +88,7 @@ def animation() -> None:
 
     current_time = time.localtime(time.time())
 
-    # print(f"{current_time.tm_hour}:{current_time.tm_min}:{current_time.tm_sec}")
+    print(f"{current_time.tm_hour}:{current_time.tm_min}:{current_time.tm_sec}")
 
     line_color = (int(195 + current_time.tm_sec), 255, int(195 + current_time.tm_sec))
 
@@ -106,10 +106,10 @@ def animation() -> None:
     line.draw(
         [CX, CY],
         [
-            np.sin(-np.pi / 30 * (current_time.tm_sec + 1) + Utils.deg_to_rads(INCLINE))
+            np.sin(-np.pi / 30 * current_time.tm_sec + Utils.deg_to_rads(INCLINE))
             * SEC_SIZE
             + CX,
-            np.cos(-np.pi / 30 * (current_time.tm_sec + 1) + Utils.deg_to_rads(INCLINE))
+            np.cos(-np.pi / 30 * current_time.tm_sec + Utils.deg_to_rads(INCLINE))
             * SEC_SIZE
             + CY,
         ],
@@ -121,10 +121,10 @@ def animation() -> None:
     line.draw(
         [CX, CY],
         [
-            np.sin(-np.pi / 6 * (current_time.tm_hour + 1) + Utils.deg_to_rads(INCLINE))
+            np.sin(-np.pi / 6 * current_time.tm_hour + Utils.deg_to_rads(INCLINE))
             * HOUR_SIZE
             + CX,
-            np.cos(-np.pi / 6 * (current_time.tm_hour + 1) + Utils.deg_to_rads(INCLINE))
+            np.cos(-np.pi / 6 * current_time.tm_hour + Utils.deg_to_rads(INCLINE))
             * HOUR_SIZE
             + CY,
         ],
@@ -136,10 +136,10 @@ def animation() -> None:
     line.draw(
         [CX, CY],
         [
-            np.sin(-np.pi / 30 * (current_time.tm_min + 1) + Utils.deg_to_rads(180))
+            np.sin(-np.pi / 30 * current_time.tm_min + Utils.deg_to_rads(180))
             * MIN_SIZE
             + CX,
-            np.cos(-np.pi / 30 * (current_time.tm_min + 1) + Utils.deg_to_rads(180))
+            np.cos(-np.pi / 30 * current_time.tm_min + Utils.deg_to_rads(180))
             * MIN_SIZE
             + CY,
         ],
