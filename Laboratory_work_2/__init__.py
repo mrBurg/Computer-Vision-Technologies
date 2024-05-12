@@ -1,5 +1,7 @@
 """Laboratory work 2"""
 
+# pylint: disable=E1101, W0603
+
 import sys
 import pathlib
 import time
@@ -29,6 +31,7 @@ MIN_SIZE = cfg.cnv_props[1] / 3
 INCLINE = 180
 line_width = cfg.cnv_props[1] / 60
 colors = "#000", "#fff", "#f00", "#000", "#ccc", "#0f0"
+COUNTER = 0
 
 line = Line(cnv, [CX, CY], [CX, CY], 4, cfg.color_palette[4])
 oval = Oval(cnv, 30, 30, CX, CY, quality=1)
@@ -83,6 +86,7 @@ def draw_triangle() -> None:
 def animation() -> None:
     """Main animation"""
 
+    global COUNTER
     cnv.fill(255)
     # cnv[:] = utils.hex_to_rgb("#1f1f1f")
 
@@ -90,10 +94,12 @@ def animation() -> None:
 
     # print(f"{current_time.tm_hour}:{current_time.tm_min}:{current_time.tm_sec}")
 
-    line_color = (int(195 + current_time.tm_sec), 255, int(195 + current_time.tm_sec))
+    current_color = int(195 + abs(current_time.tm_sec - 30) + 30)
+    line_color = (current_color, 255, current_color)
 
-    ste = line_width * (current_time.tm_sec + 1)
-    ets = line_width * (60 - current_time.tm_sec - 1)
+    ste = line_width * (COUNTER % 60)
+    ets = line_width * (-COUNTER % 60)
+    COUNTER += 0.1
 
     rect_l.draw(fill_color=Utils.rgba_to_hex(*line_color)).move(ste, CY).rotate(1)
     rect_r.draw(fill_color=Utils.rgba_to_hex(*line_color)).move(ets, CY).rotate(1)
@@ -150,9 +156,9 @@ def animation() -> None:
     oval.draw(stroke_width=5, stroke_color=colors[0], fill_color=colors[1])
 
     # cv.namedWindow("Window")
-    cv.imshow("Animation 'q' for stop", cnv)  # pylint: disable=E1101
+    cv.imshow("Animation 'q' for stop", cnv)
 
-    if cv.waitKey(1) & 0xFF == ord("q"):  # pylint: disable=E1101
+    if cv.waitKey(1) & 0xFF == ord("q"):
         return False
 
     return True
@@ -163,5 +169,5 @@ print("Press 'q' for stop")
 Utils.animate(animation)
 
 print("Press any key for exit")
-cv.waitKey(0)  # pylint: disable=E1101
-cv.destroyAllWindows()  # pylint: disable=E1101
+cv.waitKey(0)
+cv.destroyAllWindows()
