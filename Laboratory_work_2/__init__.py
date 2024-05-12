@@ -88,7 +88,7 @@ def animation() -> None:
 
     current_time = time.localtime(time.time())
 
-    print(f"{current_time.tm_hour}:{current_time.tm_min}:{current_time.tm_sec}")
+    # print(f"{current_time.tm_hour}:{current_time.tm_min}:{current_time.tm_sec}")
 
     line_color = (int(195 + current_time.tm_sec), 255, int(195 + current_time.tm_sec))
 
