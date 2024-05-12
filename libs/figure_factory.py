@@ -463,14 +463,7 @@ def test():
     oval = PolyOval(cnv, width, height, axis_offset, axis_offset)
     rect = Rectangle(cnv, width, height, axis_offset, axis_offset)
     polyline = Polyline(
-        cnv,
-        [
-            (0, 0),
-            (-20, width / 2),
-            (20, width / 2),
-        ],
-        axis_offset,
-        axis_offset,
+        cnv, [(0, 0), (-20, width / 2), (20, width / 2)], axis_offset, axis_offset
     )
 
     for i in range(0, cfg.cnv_props[0], 50):
@@ -511,7 +504,7 @@ def test():
         fig.draw(
             [
                 [0.5, -np.sin(utils.deg_to_rads(rotation_angle)), 300],
-                [np.sin(utils.deg_to_rads(rotation_angle)), 0.1, 50],
+                [np.sin(utils.deg_to_rads(rotation_angle)), 0.1, 100],
                 [0, 0, 1],
             ],
             fill_color=(cfg.color_palette[i % len(cfg.color_palette)]),
