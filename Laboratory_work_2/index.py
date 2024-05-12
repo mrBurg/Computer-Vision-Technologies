@@ -95,10 +95,10 @@ def animation() -> None:
     ste = line_width * (current_time.tm_sec + 1)
     ets = line_width * (60 - current_time.tm_sec - 1)
 
-    rect_l.draw(fill_color=Utils.rgb_to_hex(*line_color)).move(ste, CY).rotate(1)
-    rect_r.draw(fill_color=Utils.rgb_to_hex(*line_color)).move(ets, CY).rotate(1)
-    rect_t.draw(fill_color=Utils.rgb_to_hex(*line_color)).move(CX, ste).rotate(1)
-    rect_b.draw(fill_color=Utils.rgb_to_hex(*line_color)).move(CX, ets).rotate(1)
+    rect_l.draw(fill_color=Utils.rgba_to_hex(*line_color)).move(ste, CY).rotate(1)
+    rect_r.draw(fill_color=Utils.rgba_to_hex(*line_color)).move(ets, CY).rotate(1)
+    rect_t.draw(fill_color=Utils.rgba_to_hex(*line_color)).move(CX, ste).rotate(1)
+    rect_b.draw(fill_color=Utils.rgba_to_hex(*line_color)).move(CX, ets).rotate(1)
 
     draw_triangle()
 

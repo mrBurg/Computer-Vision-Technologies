@@ -1,12 +1,14 @@
 """Figure Factory"""
 
+# pylint: disable=R0913, R0902, E1101, W0221, W0237, C0301
+
 import dataclasses
 import time
 from typing import Union, Callable
 import numpy as np
 import cv2 as cv
 
-__version__ = "2.3.0"
+__version__ = "2.4.0"
 
 Cell = Union[int, float]
 
@@ -76,7 +78,7 @@ class Utils:
     """Utils"""
 
     @staticmethod
-    def hex_to_rgb(hex_str: str) -> RGBA:
+    def hex_to_rgba(hex_str: str) -> RGBA:
         """Converts a HEX color to RGB"""
 
         # r = int(hex_str[0:2], 16)
@@ -88,7 +90,7 @@ class Utils:
         hex_str = hex_str.lstrip("#")
 
         if len(hex_str) in (3, 4):
-            return Utils.hex_to_rgb(f"#{''.join([hex * 2 for hex in hex_str])}")
+            return Utils.hex_to_rgba(f"#{''.join([hex * 2 for hex in hex_str])}")
 
         if len(hex_str) == 6:
             for i in range(0, 5, 2):
@@ -110,7 +112,7 @@ class Utils:
         return tuple(rgba)
 
     @staticmethod
-    def rgb_to_hex(r: int, g: int, b: int, a: int = 255):
+    def rgba_to_hex(r: int, g: int, b: int, a: int = 255):
         """Converts a RGB color to HEX"""
 
         return f"#{r:02x}{g:02x}{b:02x}{a:02x}"  # "#%02x%02x%02x" % (r, g, b)
@@ -131,17 +133,12 @@ class Utils:
     def animate(animation: Callable[[], None], speed: float = 0.01) -> float:
         """Converts radians to degrees"""
 
-        while True:
-            in_action = animation()
-
-            if not in_action:
-                break
-
+        while animation():
             time.sleep(speed)
 
 
 @dataclasses.dataclass
-class Figure(Utils):  # pylint: disable=R0902
+class Figure(Utils):
     """Figure"""
 
     x: float = 0
@@ -258,7 +255,7 @@ class Figure(Utils):  # pylint: disable=R0902
 
         return self
 
-    def draw(  # pylint: disable=R0913
+    def draw(
         self,
         matrix: Matrix = None,
         stroke_width: int = False,
@@ -277,7 +274,7 @@ class Figure(Utils):  # pylint: disable=R0902
             self.stroke_width = int(round(stroke_width)) if stroke_width else None
 
         if not isinstance(stroke_color, bool):
-            self.stroke_color = self.hex_to_rgb(stroke_color) if stroke_color else None
+            self.stroke_color = self.hex_to_rgba(stroke_color) if stroke_color else None
 
         if isinstance(self, Line):
             cv.line(
@@ -289,11 +286,11 @@ class Figure(Utils):  # pylint: disable=R0902
             )
         else:
             if not isinstance(fill_color, bool):
-                self.fill_color = self.hex_to_rgb(fill_color) if fill_color else None
+                self.fill_color = self.hex_to_rgba(fill_color) if fill_color else None
 
             points = [np.array(self.points, dtype=np.int32)]
 
-            cv.polylines(  # pylint: disable=E1101
+            cv.polylines(
                 cnv if cnv is not None else self.cnv,
                 points,
                 True,
@@ -306,7 +303,7 @@ class Figure(Utils):  # pylint: disable=R0902
             )
 
             if self.fill_color:
-                cv.fillPoly(  # pylint: disable=E1101
+                cv.fillPoly(
                     cnv if cnv is not None else self.cnv, points, self.fill_color
                 )
 
@@ -328,12 +325,10 @@ class Figure(Utils):  # pylint: disable=R0902
 
 
 @dataclasses.dataclass
-class Oval(Figure):
+class PolyOval(Figure):
     """Oval"""
 
-    # Needs TODO: change to cv2.ellipse(cnv, (200, 200), (100, 50), 45, 0, 90, (255, 0, 0), 1)
-
-    def __init__(  # pylint: disable=R0913
+    def __init__(
         self,
         cnv: Canvas,
         width: int,
@@ -361,10 +356,28 @@ class Oval(Figure):
 
 
 @dataclasses.dataclass
+class Oval(PolyOval):
+    """Oval"""
+
+    # Needs TODO: change to cv2.ellipse(cnv, (200, 200), (100, 50), 45, 0, 90, (255, 0, 0), 1)
+
+    def __init__(
+        self,
+        cnv: Canvas,
+        width: int,
+        height: int,
+        offset_x: int = 0,
+        offset_y: int = 0,
+        quality: float = 0.75,
+    ) -> None:
+        super().__init__(cnv, width, height, offset_x, offset_y, quality=quality)
+
+
+@dataclasses.dataclass
 class Rectangle(Figure):
     """Rectangle"""
 
-    def __init__(  # pylint: disable=R0913
+    def __init__(
         self, cnv: Canvas, width, height, offset_x: int = 0, offset_y: int = 0
     ) -> None:
         p1 = (width / -2, height / -2)
@@ -389,7 +402,7 @@ class Polyline(Figure):
 class Line(Figure):
     """Line"""
 
-    def __init__(  # pylint: disable=R0913
+    def __init__(
         self,
         cnv: Canvas,
         point1: Point,
@@ -400,7 +413,7 @@ class Line(Figure):
         super().__init__(cnv, [point1, point2])
         super().draw(stroke_width=stroke_width, stroke_color=stroke_color, cnv=cnv)
 
-    def draw(  # pylint: disable=R0913, W0221, W0237
+    def draw(
         self,
         start_point: Point,
         end_point: Point,
@@ -433,10 +446,10 @@ def test():
     print(cfg)
     print(f"45 degrees in radians is equal to: {utils.deg_to_rads(45)}")
     print(
-        f"0.7853981633974483 radians in degrees is equal to: {utils.rads_to_deg(0.7853981633974483)}"  # pylint: disable=C0301
+        f"0.7853981633974483 radians in degrees is equal to: {utils.rads_to_deg(0.7853981633974483)}"
     )
     print(
-        f"Converting HEX #ff0000ff (#f00f) to RGB is equal to: {utils.hex_to_rgb('#f00f')}"
+        f"Converting HEX #ff0000ff (#f00f) to RGB is equal to: {utils.hex_to_rgba('#f00f')}"
     )
     print("-" * 10)
 
@@ -447,7 +460,7 @@ def test():
 
     cnv = np.full(cfg.cnv_props, 255, dtype=np.uint8)
 
-    oval = Oval(cnv, width, height, axis_offset, axis_offset)
+    oval = PolyOval(cnv, width, height, axis_offset, axis_offset)
     rect = Rectangle(cnv, width, height, axis_offset, axis_offset)
     polyline = Polyline(
         cnv,
@@ -517,9 +530,9 @@ def test():
     line = Line(cnv, [150, 150], [200, 200], 4, cfg.color_palette[4])
     line.draw([50, 50], [100, 100], stroke_width=4, stroke_color="fff").add(50, 0)
 
-    cv.imshow("Common Canvas", cnv)  # pylint: disable=E1101
-    cv.waitKey(0)  # pylint: disable=E1101
-    cv.destroyAllWindows()  # pylint: disable=E1101
+    cv.imshow("Common Canvas", cnv)
+    cv.waitKey(0)
+    cv.destroyAllWindows()
 
 
 if __name__ == "__main__":
