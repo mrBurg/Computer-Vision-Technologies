@@ -8,7 +8,7 @@ from typing import Union, Callable
 import numpy as np
 import cv2 as cv
 
-__version__ = "2.4.0"
+__version__ = "2.5.0"
 
 Cell = Union[int, float]
 
@@ -21,56 +21,6 @@ RGBA = tuple[int, int, int, float]
 Point = tuple[float, float]
 Points = tuple[Point]
 Canvas = tuple[int, tuple[int, int | None] | None]
-
-
-@dataclasses.dataclass
-class Config:
-    """
-    IMPORTANT: the first parameter is height
-
-    args: [ height:int, [ width:int, [ depth:int ]]]
-        - If passed as a single integer, represents the same value for both width and height, and the depth is determined by the `depth` argument or by default if argument `depth` is missing
-        - If passed two integers, represents (width, height), and the depth is determined by the `depth` argument or by default if argument `depth` is missing
-        - If passed three integers, represents (width, height, depth), but the depth is determined by the `depth` argument or the value passed if argument `depth` is missing
-
-    depth: int, optional
-        - If the value of depth goes beyond 1 to 4 inclusive, it changes to the nearest limit.
-
-    If there are no arguments, the default settings are taken (width=1024, height=768, depth=3)
-    """
-
-    default_cnv_props = 1024, 768, 3
-    cnv_props = default_cnv_props
-    color_palette = ["#f00f", "#ff7400", "#099", "#0c0", "#cd0074"]
-
-    def __init__(self, *props, depth: int = None) -> None:
-        if len(props) == 1:
-            self.cnv_props = (
-                props[0],
-                props[0],
-                max(1, min(depth if depth else self.default_cnv_props[2], 4)),
-            )
-
-        elif len(props) == 2:
-            self.cnv_props = (
-                props[0],
-                props[1],
-                max(1, min(depth if depth else self.default_cnv_props[2], 4)),
-            )
-        elif len(props) == 3:
-            self.cnv_props = (
-                props[0],
-                props[1],
-                max(1, min(depth if depth else props[2], 4)),
-            )
-        else:
-            self.cnv_props = self.default_cnv_props
-
-    def __repr__(self):
-        return f"Config:\n\tdefault_cnv_props: {self.default_cnv_props},\n\tcolor_palette: {self.color_palette}"
-
-    def __str__(self) -> str:
-        return repr(self)
 
 
 @dataclasses.dataclass
@@ -121,13 +71,13 @@ class Utils:
     def deg_to_rads(deg: float) -> float:
         """Converts degrees to radians"""
 
-        return deg * np.pi / 180.0
+        return np.radians(deg)  # deg * np.pi / 180
 
     @staticmethod
     def rads_to_deg(rad: float) -> float:
         """Converts radians to degrees"""
 
-        return rad * 180 / np.pi
+        return np.degrees(rad)  # rad * 180 / np.pi
 
     @staticmethod
     def animate(animation: Callable[[], None], speed: float = 0.01) -> float:
@@ -135,6 +85,78 @@ class Utils:
 
         while animation():
             time.sleep(speed)
+
+    @staticmethod
+    def description(name: str, props: list = None, args: list = None) -> float:
+        """Make descripton"""
+
+        description = f"\n{name} ->"
+
+        if props and len(props):
+            description += "\n props:\n  " + "\n  ".join(props)
+
+        if args and len(args):
+            description += "\n args:\n  " + "\n  ".join(args)
+
+        return description + "\n"
+
+
+@dataclasses.dataclass
+class Config:
+    """
+    IMPORTANT: the first parameter is height
+
+    args: [ height:int, [ width:int, [ depth:int ]]]
+        - If passed as a single integer, represents the same value for both width and height, and the depth is determined by the `depth` argument or by default if argument `depth` is missing
+        - If passed two integers, represents (width, height), and the depth is determined by the `depth` argument or by default if argument `depth` is missing
+        - If passed three integers, represents (width, height, depth), but the depth is determined by the `depth` argument or the value passed if argument `depth` is missing
+
+    depth: int, optional
+        - If the value of depth goes beyond 1 to 4 inclusive, it changes to the nearest limit.
+
+    If there are no arguments, the default settings are taken (width=1024, height=768, depth=3)
+    """
+
+    default_cnv_props = 1024, 768, 3
+    cnv_props = default_cnv_props
+    color_palette = ["#f00f", "#ff7400", "#099", "#0c0", "#cd0074"]
+
+    def __init__(self, *props, depth: int = None) -> None:
+        self.depth = max(1, min(depth if depth else self.default_cnv_props[2], 4))
+
+        if len(props) == 1:
+            self.width = self.height = props[0]
+            self.cnv_props = (self.height, self.width, self.depth)
+
+        elif len(props) == 2:
+            self.width = props[0]
+            self.height = props[1]
+            self.cnv_props = (self.height, self.width, self.depth)
+
+        elif len(props) == 3:
+            self.width = props[0]
+            self.height = props[1]
+            self.depth = max(1, min(depth if depth else props[2], 4))
+
+            self.cnv_props = (self.height, self.width, self.depth)
+        else:
+            self.cnv_props = self.default_cnv_props
+
+    def __repr__(self):
+        return Utils.description(
+            self.__class__.__name__,
+            [
+                f"{prop}: {str(getattr(self, prop, None))}"
+                for prop in ["default_cnv_props", "cnv_props", "color_palette"]
+            ],
+            [
+                f"{prop}: {str(getattr(self, prop, None))}"
+                for prop in ["width", "height", "depth"]
+            ],
+        )
+
+    def __str__(self) -> str:
+        return repr(self)
 
 
 @dataclasses.dataclass
@@ -154,12 +176,6 @@ class Figure(Utils):
         self.cnv = cnv
         self.initial_props = self.points = points
         self.translate(offset_x, offset_y)
-
-    def __repr__(self):
-        return f"axis X:{self.x}, axis Y: {self.y}"
-
-    def __str__(self) -> str:
-        return repr(self)
 
     @staticmethod
     def get_translate_matrix(tx: float, ty: float) -> Matrix:
@@ -326,19 +342,30 @@ class Figure(Utils):
 
 @dataclasses.dataclass
 class PolyOval(Figure):
-    """Oval"""
+    """PolyOval"""
+
+    offset_x: int = 0
+    offset_y: int = 0
+    start: int = 0
+    end: int = 360
+    quality: float = 0.75
 
     def __init__(
         self,
         cnv: Canvas,
         width: int,
         height: int,
-        offset_x: int = 0,
-        offset_y: int = 0,
-        start: int = 0,
-        end: int = 360,
-        quality: float = 0.75,
+        offset_x: int = offset_x,
+        offset_y: int = offset_y,
+        start: int = start,
+        end: int = end,
+        quality: float = quality,
     ) -> None:
+        self.cnv = cnv
+        self.width = width
+        self.height = height
+        self.offset_x = offset_x
+        self.offset_y = offset_y
         self.start = start
         self.end = end
         self.quality = quality
@@ -348,11 +375,36 @@ class PolyOval(Figure):
                 np.sin(degree * np.pi / 180) * width / 2,
                 np.cos(degree * np.pi / 180) * height / 2,
             )
-            for degree in range(
-                self.start, self.end, round(20 * (1 - self.quality) + self.quality)
-            )
+            for degree in range(start, end, round(20 * (1 - quality) + quality))
         ]
         super().__init__(cnv, points, offset_x, offset_y)
+
+    def __repr__(self):
+        return Utils.description(
+            self.__class__.__name__,
+            [
+                f"{prop}: {str(getattr(self, prop, None))}"
+                for prop in ["offset_x", "offset_y", "start", "end", "quality"]
+            ],
+            [
+                "cnv: Canvas",
+                *(
+                    f"{prop}: {str(getattr(self, prop, None))}"
+                    for prop in [
+                        "width",
+                        "height",
+                        "offset_x",
+                        "offset_y",
+                        "start",
+                        "end",
+                        "quality",
+                    ]
+                ),
+            ],
+        )
+
+    def __str__(self) -> str:
+        return repr(self)
 
 
 @dataclasses.dataclass
@@ -370,6 +422,12 @@ class Oval(PolyOval):
         offset_y: int = 0,
         quality: float = 0.75,
     ) -> None:
+        self.width = width
+        self.height = height
+        self.offset_x = offset_x
+        self.offset_y = offset_y
+        self.quality = quality
+
         super().__init__(cnv, width, height, offset_x, offset_y, quality=quality)
 
 
