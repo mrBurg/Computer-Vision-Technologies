@@ -191,8 +191,11 @@ def mouse_callback(event, x, y, _flags, _params):
         DOT_COUNTER = 0
         dot_coords = dot_coords[:4]
 
-    if event == cv.EVENT_LBUTTONDOWN:
-        MOUSE_DOWN = True
+    MOUSE_DOWN = (
+        True
+        if event == cv.EVENT_LBUTTONDOWN
+        else (False if event == cv.EVENT_LBUTTONUP else MOUSE_DOWN)
+    )
 
     if event == cv.EVENT_MOUSEMOVE and MOUSE_DOWN:
         dot_coords.append([x, y])
