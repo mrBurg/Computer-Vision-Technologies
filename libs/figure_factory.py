@@ -123,6 +123,8 @@ class Config:
 
     def __init__(self, *props, depth: int = None) -> None:
         self.depth = max(1, min(depth if depth else self.default_cnv_props[2], 4))
+        self.width = self.default_cnv_props[1]
+        self.height = self.default_cnv_props[0]
 
         if len(props) == 1:
             self.width = self.height = props[0]
@@ -511,14 +513,14 @@ def test():
     )
     print("-" * 10)
 
-    width = cfg.cnv_props[1] / 4
+    width = cfg.width / 4
     height = width
     axis_offset = 150
     rotation_angle = 45
 
     cnv = np.full(cfg.cnv_props, 255, dtype=np.uint8)
 
-    oval = PolyOval(cnv, width, height, axis_offset, axis_offset)
+    oval = Oval(cnv, width, height, axis_offset, axis_offset)
     rect = Rectangle(cnv, width, height, axis_offset, axis_offset)
     polyline = Polyline(
         cnv, [(0, 0), (-20, width / 2), (20, width / 2)], axis_offset, axis_offset

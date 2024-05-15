@@ -19,10 +19,11 @@ try:
 except ImportError:
     from libs.figure_factory import Config, Utils, Line, PolyOval, Rectangle, Polyline
 
-cfg = Config(800, 600)
+cfg = Config(600, 600)
 
 cnv = np.full(cfg.cnv_props, 255, dtype=np.uint8)
 
+WIN_NAME = "Window"
 CX = cfg.width / 2
 CY = cfg.height / 2
 COLORS = "#000", "#fff", "#f00", "#ccc", "#0f0", "#1f1f1f"
@@ -111,7 +112,6 @@ def draw_lines(sec: int, counter: float) -> None:
 
 arrow = Line(cnv, [CX, CY], [CX, CY], 4, cfg.color_palette[4])
 oval = PolyOval(cnv, 30, 30, CX, CY)
-print(oval)
 
 
 def draw_clock(current_time: time.struct_time) -> None:
@@ -160,13 +160,15 @@ def draw_clock(current_time: time.struct_time) -> None:
     oval.draw(stroke_width=5, stroke_color=COLORS[0], fill_color=COLORS[1])
 
 
-dot = PolyOval(cnv, 10, 10, 300, 0)
+dot = PolyOval(cnv, 10, 10, cfg.width / 2, cfg.height / 2)
+mouse_point = [0, 0]
 DOT_COUNTER = 0
 
 dot_coords = [
+    [0, 0],
     [cfg.width / 2, 0],
     [0, cfg.height / 2],
-    [cfg.height, cfg.width],
+    [cfg.width, cfg.height],
     [cfg.width, cfg.height / 2],
 ]
 
@@ -175,37 +177,33 @@ vector_length = np.sqrt(
     (dot.x - dot_coords[0][0]) ** 2 + (dot.y - dot_coords[0][1]) ** 2
 )
 
+line = Line(cnv, [CX, CY], [CX, CY], 4, cfg.color_palette[4])
+
+
+def mouse_callback(event, x, y, _flags, _params):
+    """Mouse callback"""
+
+    if event == cv.EVENT_MOUSEMOVE:
+        mouse_point[0] = x
+        mouse_point[1] = y
+
 
 def draw_dot() -> None:
     """Draw red dot"""
 
-    global DOT_COUNTER
     global angle
-    global vector_length
 
-    dot_num = DOT_COUNTER % len(dot_coords)
+    # dot.move(dot.x + np.sin(mouse_point[0]), dot.y + np.cos(mouse_point[1])).draw(fill_color=COLORS[2])
+    angle = np.arctan2(mouse_point[1] - dot.y, mouse_point[0] - dot.x) / np.pi * 180
 
-    current_vector_length = np.sqrt(
-        (dot.x - dot_coords[dot_num][0]) ** 2 + (dot.y - dot_coords[dot_num][1]) ** 2
+    print(angle)
+    Line(
+        cnv,
+        [CX, CY],
+        [mouse_point[0], mouse_point[1]],
+        4,
+        cfg.color_palette[4],
     )
-
-    if current_vector_length < 1:
-        DOT_COUNTER += 1
-        dot_num = DOT_COUNTER % len(dot_coords)
-
-        angle = np.arctan2(
-            dot_coords[dot_num][1] - dot.y, dot_coords[dot_num][0] - dot.x
-        )
-
-        vector_length = np.sqrt(
-            (dot.x - dot_coords[dot_num][0]) ** 2
-            + (dot.y - dot_coords[dot_num][1]) ** 2
-        )
-
-        # print(DOT_COUNTER, "DOT_COUNTER")
-        # print(angle, "angle")
-
-    # dot.move(dot.x + np.cos(angle), dot.y + np.sin(angle)).draw(fill_color=COLORS[2])
     dot.draw(fill_color=COLORS[2])
 
 
@@ -227,8 +225,9 @@ def animation() -> None:
 
     COUNTER += 1
 
-    # cv.namedWindow("Window")
-    cv.imshow("Animation 'q' for stop", cnv)
+    cv.namedWindow(WIN_NAME)
+    cv.setMouseCallback(WIN_NAME, mouse_callback)
+    cv.imshow(WIN_NAME, cnv)
 
     if cv.waitKey(1) & 0xFF == ord("q"):
         return False
@@ -238,7 +237,7 @@ def animation() -> None:
 
 print("Press 'q' for stop")
 
-Utils.animate(animation)
+Utils.animate(animation, 0.05)
 
 print("Press any key for exit")
 
