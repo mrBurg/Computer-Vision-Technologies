@@ -50,16 +50,16 @@ def draw_triangle() -> None:
     for point in points:
         coords = point["coords"]
 
-        if coords[0] <= 0:
+        if coords[0] < 0:
             coords[0] = 0
 
-        if coords[1] <= 0:
-            coords[1] = 0
-
-        if coords[0] >= cfg.width:
+        if coords[0] > cfg.width:
             coords[0] = cfg.width
 
-        if coords[1] >= cfg.height:
+        if coords[1] < 0:
+            coords[1] = 0
+
+        if coords[1] > cfg.height:
             coords[1] = cfg.height
 
         if (
@@ -242,7 +242,7 @@ def animation() -> None:
 
     COUNTER += 1
 
-    cv.namedWindow(WIN_NAME)
+    cv.namedWindow(WIN_NAME, cv.WINDOW_AUTOSIZE)
     cv.setMouseCallback(WIN_NAME, mouse_callback)
     cv.imshow(WIN_NAME, cnv)
 
