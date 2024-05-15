@@ -9,7 +9,6 @@ import numpy as np
 import cv2 as cv
 
 __version__ = "2.5.0"
-__version__ = "2.5.0"
 
 Cell = Union[int, float]
 
@@ -73,13 +72,11 @@ class Utils:
         """Converts degrees to radians"""
 
         return np.radians(deg)  # deg * np.pi / 180
-        return np.radians(deg)  # deg * np.pi / 180
 
     @staticmethod
     def rads_to_deg(rad: float) -> float:
         """Converts radians to degrees"""
 
-        return np.degrees(rad)  # rad * 180 / np.pi
         return np.degrees(rad)  # rad * 180 / np.pi
 
     @staticmethod
