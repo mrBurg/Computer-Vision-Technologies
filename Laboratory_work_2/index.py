@@ -19,15 +19,14 @@ try:
 except ImportError:
     from libs.figure_factory import Config, Utils, Line, PolyOval, Rectangle, Polyline
 
-cfg = Config(600, 600)
+cfg = Config(600, 600, colors=["#000", "#fff", "#f00", "#ccc", "#0f0", "#1f1f1f"])
 
 cnv = np.full(cfg.cnv_props, 255, dtype=np.uint8)
 
 WIN_NAME = "Window"
 CX = cfg.width / 2
 CY = cfg.height / 2
-COLORS = "#000", "#fff", "#f00", "#ccc", "#0f0", "#1f1f1f"
-BG_COLOR = Utils.hex_to_rgba(COLORS[5])
+BG_COLOR = Utils.hex_to_rgba(cfg.color_palette[5])
 COUNTER = 0
 
 
@@ -128,7 +127,7 @@ def draw_clock(current_time: time.struct_time) -> None:
         [CX, CY],
         get_angle(current_time.tm_sec, 30, cfg.width / 2.5),
         stroke_width=4,
-        stroke_color=COLORS[2],
+        stroke_color=cfg.color_palette[2],
     )
 
     # Hours
@@ -141,7 +140,7 @@ def draw_clock(current_time: time.struct_time) -> None:
             np.pi / 360 * current_time.tm_min + np.pi / 21600 * current_time.tm_sec,
         ),
         stroke_width=20,
-        stroke_color=COLORS[1],
+        stroke_color=cfg.color_palette[1],
     )
 
     # Minutes
@@ -154,57 +153,72 @@ def draw_clock(current_time: time.struct_time) -> None:
             np.pi / 1800 * current_time.tm_sec,
         ),
         stroke_width=10,
-        stroke_color=COLORS[3],
+        stroke_color=cfg.color_palette[3],
     )
 
-    oval.draw(stroke_width=5, stroke_color=COLORS[0], fill_color=COLORS[1])
+    oval.draw(
+        stroke_width=5,
+        stroke_color=cfg.color_palette[0],
+        fill_color=cfg.color_palette[1],
+    )
 
 
 dot = PolyOval(cnv, 10, 10, cfg.width / 2, cfg.height / 2)
-mouse_point = [0, 0]
 DOT_COUNTER = 0
+SPEED = 5
+MOUSE_DOWN = False
 
 dot_coords = [
-    [0, 0],
     [cfg.width / 2, 0],
     [0, cfg.height / 2],
-    [cfg.width, cfg.height],
+    [cfg.width / 2, cfg.height],
     [cfg.width, cfg.height / 2],
 ]
 
-angle = np.arctan2(dot_coords[0][0] - dot.y, dot_coords[0][1] - dot.x)
-vector_length = np.sqrt(
-    (dot.x - dot_coords[0][0]) ** 2 + (dot.y - dot_coords[0][1]) ** 2
-)
+dx = dot_coords[0][0] - dot.x
+dy = dot_coords[0][1] - dot.y
 
-line = Line(cnv, [CX, CY], [CX, CY], 4, cfg.color_palette[4])
+angle = np.arctan2(dy, dx)
+distance = np.sqrt(dx**2 + dy**2)
 
 
 def mouse_callback(event, x, y, _flags, _params):
     """Mouse callback"""
 
-    if event == cv.EVENT_MOUSEMOVE:
-        mouse_point[0] = x
-        mouse_point[1] = y
+    global MOUSE_DOWN, DOT_COUNTER, dot_coords
+
+    if event == cv.EVENT_RBUTTONUP:
+        DOT_COUNTER = 0
+        dot_coords = dot_coords[:4]
+
+    if event == cv.EVENT_LBUTTONDOWN:
+        MOUSE_DOWN = True
+
+    if event == cv.EVENT_MOUSEMOVE and MOUSE_DOWN:
+        dot_coords.append([x, y])
 
 
 def draw_dot() -> None:
     """Draw red dot"""
 
-    global angle
+    global angle, distance, DOT_COUNTER, dx, dy, dot_coords
 
-    # dot.move(dot.x + np.sin(mouse_point[0]), dot.y + np.cos(mouse_point[1])).draw(fill_color=COLORS[2])
-    angle = np.arctan2(mouse_point[1] - dot.y, mouse_point[0] - dot.x) / np.pi * 180
+    dx = dot_coords[DOT_COUNTER][0] - dot.x
+    dy = dot_coords[DOT_COUNTER][1] - dot.y
 
-    print(angle)
-    Line(
-        cnv,
-        [CX, CY],
-        [mouse_point[0], mouse_point[1]],
-        4,
-        cfg.color_palette[4],
+    angle = np.arctan2(dy, dx)
+    distance = np.sqrt(dx**2 + dy**2)
+
+    if distance < SPEED:
+        if DOT_COUNTER == len(dot_coords) - 1:
+            dot_coords = dot_coords[:4]
+
+        DOT_COUNTER += 1
+        DOT_COUNTER = DOT_COUNTER % len(dot_coords)
+
+    dot.translate(np.cos(angle) * SPEED, np.sin(angle) * SPEED).draw(
+        fill_color=cfg.color_palette[2]
     )
-    dot.draw(fill_color=COLORS[2])
 
 
 def animation() -> None:
@@ -212,7 +226,7 @@ def animation() -> None:
 
     global COUNTER
 
-    cnv.fill(255)
+    cnv.fill(000)
     cnv[:] = BG_COLOR
 
     current_time = time.localtime(time.time())
@@ -237,7 +251,7 @@ def animation() -> None:
 
 print("Press 'q' for stop")
 
-Utils.animate(animation, 0.05)
+Utils.animate(animation)
 
 print("Press any key for exit")
 

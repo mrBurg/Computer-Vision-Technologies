@@ -119,12 +119,28 @@ class Config:
 
     default_cnv_props = 1024, 768, 3
     cnv_props = default_cnv_props
-    color_palette = ["#f00f", "#ff7400", "#099", "#0c0", "#cd0074"]
 
-    def __init__(self, *props, depth: int = None) -> None:
+    default_colors = ["#f00f", "#ff7400", "#099", "#0c0", "#cd0074"]
+    color_palette = default_colors
+
+    def __init__(
+        self,
+        *props,
+        depth: int = None,
+        colors: list[str] = None,
+        add_colors: list[str] = None,
+    ) -> None:
         self.depth = max(1, min(depth if depth else self.default_cnv_props[2], 4))
         self.width = self.default_cnv_props[1]
         self.height = self.default_cnv_props[0]
+
+        print(colors)
+
+        if colors:
+            self.color_palette = colors
+
+        if add_colors:
+            self.color_palette.extend(add_colors)
 
         if len(props) == 1:
             self.width = self.height = props[0]
@@ -149,7 +165,12 @@ class Config:
             self.__class__.__name__,
             [
                 f"{prop}: {str(getattr(self, prop, None))}"
-                for prop in ["default_cnv_props", "cnv_props", "color_palette"]
+                for prop in [
+                    "default_cnv_props",
+                    "cnv_props",
+                    "default_colors",
+                    "color_palette",
+                ]
             ],
             [
                 f"{prop}: {str(getattr(self, prop, None))}"
