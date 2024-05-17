@@ -66,7 +66,7 @@ rect = Rectangle(cnv, prlpd_config[0], prlpd_config[1], offset_x=CX, offset_y=CY
 prllppd_vertex.extend(rect.points)
 
 for i in range(2):
-    rect = rect.translate(50, -50).draw()
+    rect = rect.translate(50, -50).skew_x(45).draw()
     prllppd_vertex.extend(rect.points)
 
 # print(prllppd_vertex)

@@ -271,6 +271,26 @@ class Figure:
             (0, 0, 1),
         ]
 
+    @staticmethod
+    def get_skew_x_matrix(rad: float) -> Matrix:
+        """Returns skewX matrix"""
+
+        return [
+            (1, np.tan(rad), 0),
+            (0, 1, 0),
+            (0, 0, 1),
+        ]
+
+    @staticmethod
+    def get_skew_y_matrix(rad: float) -> Matrix:
+        """Returns skewY matrix"""
+
+        return [
+            (1, 0, 0),
+            (np.tan(rad), 1, 0),
+            (0, 0, 1),
+        ]
+
     def _apply_matrix(self, matrix: Matrix) -> None:
         matrix = np.array(matrix).T
 
@@ -398,6 +418,24 @@ class Figure:
 
         self._apply_matrix(Figure.get_translate_matrix(-self.x, -self.y))
         self._apply_matrix(Figure.get_rotate_matrix(Utils.deg_to_rads(deg)))
+        self._apply_matrix(Figure.get_translate_matrix(self.x, self.y))
+
+        return self
+
+    def skew_x(self, deg: float) -> "Figure":
+        """skew X"""
+
+        self._apply_matrix(Figure.get_translate_matrix(-self.x, -self.y))
+        self._apply_matrix(Figure.get_skew_x_matrix(Utils.deg_to_rads(deg)))
+        self._apply_matrix(Figure.get_translate_matrix(self.x, self.y))
+
+        return self
+
+    def skew_y(self, deg: float) -> "Figure":
+        """skew Y"""
+
+        self._apply_matrix(Figure.get_translate_matrix(-self.x, -self.y))
+        self._apply_matrix(Figure.get_skew_y_matrix(Utils.deg_to_rads(deg)))
         self._apply_matrix(Figure.get_translate_matrix(self.x, self.y))
 
         return self
