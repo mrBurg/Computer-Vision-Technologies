@@ -14,23 +14,20 @@ LIBS_PATH = Path.cwd().resolve()
 sys.path.append(str(LIBS_PATH))
 
 try:
-    from figure_factory import Config, Utils, Polyline  # type: ignore
+    from figure_factory import Config, Utils, Rectangle, Line  # type: ignore
 except ImportError:
-    from libs.figure_factory import Config, Utils, Polyline
+    from libs.figure_factory import Config, Utils, Rectangle, Line
 
-cfg = Config(colors=["#000", "#fff", "#f00", "#ccc", "#0f0", "#1f1f1f"])
-
-print(cfg.cnv_props)
+cfg = Config()
 
 cnv = np.full(cfg.cnv_props, 255, dtype=np.uint8)
 
 WIN_NAME = "Window"
 CX = cfg.width / 2
 CY = cfg.height / 2
-BG_COLOR = Utils.hex_to_rgba(cfg.color_palette[5])
-# print(points)
-# triangle = Polyline(cnv, [point["coords"] for point in points])
+BG_COLOR = Utils.hex_to_rgba(cfg.colors[12])
 
+prlpd_config = 400, 300, 200  # width, height, length
 
 # def mouse_callback(event, x, y, _flags, _params):
 #     """Mouse callback"""
@@ -50,12 +47,52 @@ BG_COLOR = Utils.hex_to_rgba(cfg.color_palette[5])
 #     if event == cv.EVENT_MOUSEMOVE and MOUSE_DOWN:
 #         dot_coords.append([x, y])
 
+line = Line(cnv, stroke_color=cfg.colors[6])
+
+
+def draw_coords() -> None:
+    """Draw coords"""
+
+    line.draw([0, CY], [cfg.width, CY]).draw([CX, 0], [CX, cfg.height])
+
+
+draw_coords()
+
+
+prllppd_vertex = []
+
+rect = Rectangle(cnv, prlpd_config[0], prlpd_config[1], offset_x=CX, offset_y=CY).draw()
+
+prllppd_vertex.extend(rect.points)
+
+for i in range(2):
+    rect = rect.translate(50, -50).draw()
+    prllppd_vertex.extend(rect.points)
+
+# print(prllppd_vertex)
+
+# ANGLE = 15
+
+# rect.rotate(ANGLE).scale(1, 0.2).rotate(-ANGLE / 5).scale(1, 5).draw()
+
+cv.namedWindow(WIN_NAME, cv.WINDOW_AUTOSIZE)
+cv.imshow(WIN_NAME, cnv)
+
+
+def draw_parallelepiped() -> None:
+    """Draw parallelepiped"""
+
+    # rect.draw(stroke_width=5).move(prlpd_config[2], prlpd_config[2])
+
 
 def animation() -> None:
     """Main animation"""
 
-    cnv.fill(000)
+    cnv.fill(255)
     cnv[:] = BG_COLOR
+
+    draw_parallelepiped()
+    draw_coords()
 
     cv.namedWindow(WIN_NAME, cv.WINDOW_AUTOSIZE)
     # cv.setMouseCallback(WIN_NAME, mouse_callback)
@@ -69,7 +106,7 @@ def animation() -> None:
 
 print("Press 'q' for stop")
 
-Utils.animate(animation)
+# Utils.animate(animation)
 
 print("Press any key for exit")
 

@@ -18,9 +18,9 @@ Matrix = tuple[
     tuple[Cell, Cell, Cell],
     tuple[int, int, int],
 ]
-RGBA = tuple[int, int, int, float]
+RGB = tuple[int, int, int, float | None]
 Point = tuple[float, float]
-Points = tuple[Point]
+Points = list[Point]
 Canvas = list[tuple[int, int, int, int | None]]
 CanvasProps = tuple[int, tuple[int, int | None] | None]
 
@@ -30,14 +30,13 @@ class Utils:
     """Utils"""
 
     @staticmethod
-    def hex_to_rgba(hex_str: str) -> RGBA:
+    def hex_to_rgba(hex_str: str) -> RGB:
         """Converts a HEX color to RGB"""
 
         if hex_str:
             # r = int(hex_str[0:2], 16)
             # g = int(hex_str[2:4], 16)
             # b = int(hex_str[4:6], 16)
-            # return (r, g, b)
 
             rgba = []
             hex_str = hex_str.lstrip("#")
@@ -59,10 +58,10 @@ class Utils:
                         break
 
                     rgba.insert(0, color)
-        else:
-            rgba = [0, 0, 0, 1.0]
 
-        return tuple(rgba)
+            return tuple(rgba)
+
+        return None
 
     @staticmethod
     def rgba_to_hex(r: int, g: int, b: int, a: int = 255):
@@ -154,24 +153,24 @@ class Config:
         "#808080",  # 14 rgb("128 128 128") - gray (Серый)
         "#C0C0C0",  # 15 rgb("192 192 192") - silver (Светло-серый)
     ]
-    color_palette = default_colors
+    colors = default_colors
 
     def __init__(
         self,
         *props: CanvasProps,
         depth: int = None,
-        colors: list[str] = None,
-        add_colors: list[str] = None,
+        colors: list[str] = None,  # Replaces default colors
+        add_colors: list[str] = None,  # Adds a set to the default colors
     ) -> None:
         self.width = self.default_cnv_props[1]
         self.height = self.default_cnv_props[0]
         self.depth = max(1, min(depth if depth else self.default_cnv_props[2], 4))
 
         if colors:
-            self.color_palette = colors
+            self.colors = colors
 
         if add_colors:
-            self.color_palette.extend(add_colors)
+            self.colors.extend(add_colors)
 
         if len(props) == 1:
             self.width = self.height = props[0]
@@ -199,7 +198,7 @@ class Config:
                     "default_cnv_props",
                     "cnv_props",
                     "default_colors",
-                    "color_palette",
+                    "colors",
                 ]
             ],
             [
@@ -218,16 +217,28 @@ class Figure:
 
     x: float = 0
     y: float = 0
-    stroke_width: float = 0
-    stroke_color: str = None
-    fill_color: str = None
+    stroke_width: float | bool = False
+    stroke_color: str | bool = False
+    fill_color: str | bool = False
     initial_props: Points = None
 
     def __init__(
-        self, cnv: Canvas, points: Points, offset_x: float = x, offset_y: float = y
+        self,
+        cnv: Canvas,
+        points: Points,
+        # **kwargs,
+        offset_x: float = x,
+        offset_y: float = y,
+        stroke_width: float = stroke_width,
+        stroke_color: str = stroke_color,
+        fill_color: str = fill_color,
     ) -> None:
         self.cnv = cnv
+        self.stroke_width = stroke_width
+        self.stroke_color = stroke_color
+        self.fill_color = fill_color
         self.initial_props = self.points = points
+
         self.translate(offset_x, offset_y)
 
     @staticmethod
@@ -270,6 +281,95 @@ class Figure:
             points = np.append(points, [point[:2]], axis=0)
 
         self.points = points
+
+    def _get_stroke_width(self, weight: int | float | bool | None) -> int | None:
+        """Get weight"""
+
+        if isinstance(weight, bool):
+            if self.stroke_width:  # pylint: disable=R1705
+                return int(round(self.stroke_width))
+
+            elif self.stroke_width is None:
+                return None
+
+            if weight:
+                self.stroke_width = 1
+
+                return self.stroke_width
+
+            self.stroke_width = 0
+
+            return self.stroke_width
+
+        if isinstance(weight, (int, float)):
+            self.stroke_width = int(round(weight))
+
+            return self.stroke_width
+
+        self.stroke_width = None
+
+        return None
+
+    def _get_stroke_color(  # pylint: disable=R0911
+        self, color: str | bool | None
+    ) -> RGB | None:
+        """Get color"""
+
+        if isinstance(color, bool):
+            if self.stroke_color:  # pylint: disable=R1705
+                if isinstance(self.stroke_color, bool):
+                    return Utils.hex_to_rgba("#fff")
+
+                return Utils.hex_to_rgba(self.stroke_color)
+
+            elif self.stroke_color is None:
+                return None
+
+            if color:
+                self.stroke_color = "#fff"
+
+                return Utils.hex_to_rgba(self.stroke_color)
+
+            self.stroke_color = "#000"
+
+            return Utils.hex_to_rgba(self.stroke_color)
+
+        if isinstance(color, str):
+            self.stroke_color = color
+
+            return Utils.hex_to_rgba(self.stroke_color)
+
+        self.stroke_color = None
+
+        return None
+
+    def _get_fill_color(  # pylint: disable=R0911
+        self, color: str | bool | None
+    ) -> RGB | None:
+        """Get color"""
+
+        if isinstance(color, bool):
+            if self.fill_color:  # pylint: disable=R1705
+                if isinstance(self.fill_color, bool):
+                    return Utils.hex_to_rgba("#fff")
+
+                return Utils.hex_to_rgba(self.fill_color)
+
+            elif self.fill_color is None:
+                return None
+
+            self.fill_color = None
+
+            return self.fill_color
+
+        if isinstance(color, str):
+            self.fill_color = color
+
+            return Utils.hex_to_rgba(self.fill_color)
+
+        self.fill_color = None
+
+        return None
 
     def translate(self, tx: float, ty: float = None) -> "Figure":
         """Translate"""
@@ -321,32 +421,6 @@ class Figure:
 
         return self
 
-    def _get_color(self, color: str | bool | None) -> tuple[int, int, int] | None:
-        """Get color"""
-
-        if isinstance(color, bool):
-            return Utils.hex_to_rgba(self.fill_color) if self.fill_color else None
-
-        self.fill_color = color
-
-        if self.fill_color:
-            return Utils.hex_to_rgba(self.fill_color)
-
-        return self.fill_color
-
-    def _get_weight(self, weight: int | float | bool | None) -> int | None:
-        """Get weight"""
-
-        if isinstance(weight, bool):
-            return int(round(self.stroke_width)) if self.stroke_width else None
-
-        self.stroke_width = weight
-
-        if self.stroke_width:
-            return int(round(self.stroke_width))
-
-        return self.stroke_width
-
     def draw(
         self,
         matrix: Matrix = None,
@@ -361,14 +435,20 @@ class Figure:
             self._apply_matrix(matrix)
             self._apply_matrix(self.get_translate_matrix(self.x, self.y))
 
-        fill_color = self._get_color(fill_color)
-        stroke_width = self._get_weight(stroke_width)
-        stroke_color = self._get_color(stroke_color)
+        stroke_width = self._get_stroke_width(stroke_width)
+        stroke_color = self._get_stroke_color(stroke_color)
+        fill_color = self._get_fill_color(fill_color)
 
         if isinstance(self, Line):
             points = np.array([self.points[0], self.points[1]], dtype=np.int32)
 
-            cv.line(self.cnv, points[0], points[1], stroke_color, stroke_width)
+            cv.line(
+                self.cnv,
+                points[0],
+                points[1],
+                stroke_color,
+                1 if stroke_width < 1 else stroke_width,
+            )
         else:
             points = [np.array(self.points, dtype=np.int32)]
 
@@ -394,11 +474,9 @@ class Figure:
 
         # Needs TODO: Reset the size when given new
 
-        self.x = 0
-        self.y = 0
-        self.stroke_width = 0
-        self.stroke_color = None
-        self.fill_color = None
+        self.x = self.y = 0
+        self.stroke_width = 1
+        self.stroke_color = self.fill_color = None
         self.points = self.initial_props
 
         return self
@@ -408,8 +486,6 @@ class Figure:
 class PolyOval(Figure):
     """PolyOval"""
 
-    offset_x: int = 0
-    offset_y: int = 0
     start: int = 0
     end: int = 360
     quality: float = 0.75
@@ -419,17 +495,13 @@ class PolyOval(Figure):
         cnv: Canvas,
         width: int,
         height: int,
-        offset_x: int = offset_x,
-        offset_y: int = offset_y,
         start: int = start,
         end: int = end,
         quality: float = quality,
+        **kwargs,
     ) -> None:
-        self.cnv = cnv
         self.width = width
         self.height = height
-        self.offset_x = offset_x
-        self.offset_y = offset_y
         self.start = start
         self.end = end
         self.quality = quality
@@ -442,7 +514,8 @@ class PolyOval(Figure):
                 self.start, self.end, round(20 * (1 - self.quality) + self.quality)
             )
         ]
-        super().__init__(self.cnv, self.points, self.offset_x, self.offset_y)
+
+        super().__init__(cnv, self.points, **kwargs)
 
     def __repr__(self):
         return Utils.description(
@@ -478,44 +551,18 @@ class Oval(PolyOval):
 
     # Needs TODO: change to cv2.ellipse(cnv, (200, 200), (100, 50), 45, 0, 90, (255, 0, 0), 1)
 
-    def __init__(
-        self,
-        cnv: Canvas,
-        width: int,
-        height: int,
-        offset_x: int = 0,
-        offset_y: int = 0,
-        quality: float = 0.75,
-    ) -> None:
-        self.cnv = cnv
-        self.width = width
-        self.height = height
-        self.offset_x = offset_x
-        self.offset_y = offset_y
-        self.quality = quality
-
-        super().__init__(
-            self.cnv,
-            self.width,
-            self.height,
-            self.offset_x,
-            self.offset_y,
-            quality=self.quality,
-        )
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
 
 
 @dataclasses.dataclass
 class Rectangle(Figure):
     """Rectangle"""
 
-    def __init__(
-        self, cnv: Canvas, width, height, offset_x: int = 0, offset_y: int = 0
-    ) -> None:
+    def __init__(self, cnv: Canvas, width, height, **kwargs) -> None:
         self.cnv = cnv
         self.width = width
         self.height = height
-        self.offset_x = offset_x
-        self.offset_y = offset_y
 
         p1 = (self.width / -2, self.height / -2)
         p2 = (p1[0] + self.width, p1[1])
@@ -524,21 +571,18 @@ class Rectangle(Figure):
 
         self.points = [p1, p2, p3, p4]
 
-        super().__init__(self.cnv, self.points, self.offset_x, self.offset_y)
+        super().__init__(self.cnv, self.points, **kwargs)
 
 
 @dataclasses.dataclass
 class Polyline(Figure):
     """Polyline"""
 
-    def __init__(
-        self, cnv: Canvas, points: Points, offset_x: int = 0, offset_y: int = 0
-    ) -> None:
+    def __init__(self, cnv: Canvas, points: Points, **kwargs) -> None:
         self.cnv = cnv
-        self.offset_x = offset_x
-        self.offset_y = offset_y
         self.points = points
-        super().__init__(self.cnv, self.points, self.offset_x, self.offset_y)
+
+        super().__init__(self.cnv, self.points, **kwargs)
 
 
 @dataclasses.dataclass
@@ -547,19 +591,11 @@ class Line(Figure):
 
     point = [0, 0]
 
-    def __init__(
-        self,
-        cnv: Canvas,
-        point: Point = None,
-        stroke_width: int = 0,
-        stroke_color: str = None,
-    ) -> None:
+    def __init__(self, cnv: Canvas, point: Point = None, **kwargs) -> None:
         self.cnv = cnv
         self.line = self.points = [self.point if point is None else point]
-        self.stroke_width = stroke_width
-        self.stroke_color = stroke_color
 
-        super().__init__(self.cnv, self.points)
+        super().__init__(self.cnv, self.points, **kwargs)
 
     def draw(
         self,
@@ -571,8 +607,10 @@ class Line(Figure):
         """Draw line"""
 
         self.points = [start_point, end_point]
+        self.stroke_width = stroke_width if stroke_width else self.stroke_width
+        self.stroke_color = stroke_color if stroke_color else self.stroke_color
 
-        super().draw(None, stroke_width, stroke_color)
+        super().draw(None, self.stroke_width, self.stroke_color)
 
         return self
 
@@ -581,8 +619,8 @@ class Line(Figure):
     ) -> None:
         """Add line"""
 
-        self.stroke_width = stroke_width
-        self.stroke_color = stroke_color
+        self.stroke_width = stroke_width if stroke_width else self.stroke_width
+        self.stroke_color = stroke_color if stroke_color else self.stroke_color
 
         p1 = self.line[-1]
         p2 = [p1[0] + x, p1[1] + y]
@@ -608,43 +646,46 @@ def test():
         f"{Utils.deg_to_rads(45)} radians in degrees is equal to: {Utils.rads_to_deg(Utils.deg_to_rads(45))}"
     )
     print(
-        f"Converting HEX #ff0000[ff] (#f00[f]) to RGB is equal to: {Utils.hex_to_rgba(cfg.color_palette[11])}"
+        f"Converting HEX #ff0000[ff] (#f00[f]) to RGB is equal to: {Utils.hex_to_rgba(cfg.colors[11])}"
     )
     print("-" * 10)
 
-    width = cfg.width / 4
+    width = 200
     height = width
-    axis_offset = 150
+    axis_offset = width * 0.75
     rotation_angle = 45
 
     cnv = np.full(cfg.cnv_props, 255, dtype=np.uint8)
 
-    oval = Oval(cnv, width, height, axis_offset, axis_offset)
-    rect = Rectangle(cnv, width, height, axis_offset, axis_offset)
+    oval = PolyOval(cnv, width, height, offset_x=axis_offset, offset_y=axis_offset)
+    rect = Rectangle(cnv, width, height, offset_x=axis_offset, offset_y=axis_offset)
     polyline = Polyline(
-        cnv, [(0, 0.3), (-20, width / 2), (20, width / 2)], axis_offset, axis_offset
+        cnv,
+        [(0, 0.3), (-20, width / 2), (20, width / 2)],
+        offset_x=axis_offset,
+        offset_y=axis_offset,
     )
     line = Line(cnv)
 
     for i in range(0, cfg.height, 50):
-        line.draw([0, i], [cfg.width, i], stroke_color=cfg.color_palette[6]).draw(
+        line.draw([0, i], [cfg.width, i], stroke_color=cfg.colors[6]).draw(
             [i, 0], [i, cfg.height]
         )
 
     for i, fig in enumerate([rect, oval, polyline]):
         # 1
-        fig.draw(fill_color=cfg.color_palette[i % len(cfg.color_palette)])
+        fig.draw(fill_color=cfg.colors[i % len(cfg.colors)])
         # 2
         fig.translate(250, 0).draw(
             stroke_width=5,
-            stroke_color=cfg.color_palette[(i + 6) % len(cfg.color_palette)],
-            fill_color=cfg.color_palette[i % len(cfg.color_palette)],
+            stroke_color=cfg.colors[(i + 6) % len(cfg.colors)],
+            fill_color=cfg.colors[i % len(cfg.colors)],
         )
         # 3
         fig.translate(250, 0).scale(1, 0.5).draw(
-            stroke_color=cfg.color_palette[i % len(cfg.color_palette)],
+            stroke_color=cfg.colors[i % len(cfg.colors)],
             fill_color=(
-                cfg.color_palette[(i + 1) % len(cfg.color_palette)]
+                cfg.colors[(i + 1) % len(cfg.colors)]
                 if isinstance(fig, Polyline)
                 else None
             ),
@@ -665,8 +706,8 @@ def test():
                 [0, 0, 1],
             ],
             stroke_width=2,
-            stroke_color=(cfg.color_palette[(i + 6) % len(cfg.color_palette)]),
-            fill_color=(cfg.color_palette[i % len(cfg.color_palette)]),
+            stroke_color=(cfg.colors[(i + 6) % len(cfg.colors)]),
+            fill_color=(cfg.colors[i % len(cfg.colors)]),
         )
         # 7
         fig.reset().translate(150, 650).draw()
@@ -675,21 +716,23 @@ def test():
             stroke_width=2
         )
         # 9
-        fig.move(650, 650).draw(
-            fill_color=cfg.color_palette[i % len(cfg.color_palette)]
-        )
+        fig.move(650, 650).draw(fill_color=cfg.colors[i % len(cfg.colors)])
         # 10
         fig.translate(-500, 250).scale(1, 0.5).rotate(-45).draw(
-            stroke_color=cfg.color_palette[(i + 6) % len(cfg.color_palette)],
+            stroke_color=cfg.colors[(i + 6) % len(cfg.colors)],
         )
 
     line = (
-        Line(cnv, [axis_offset, axis_offset], 4, cfg.color_palette[4])
-        .add(-axis_offset / 2, 0, 2, cfg.color_palette[4])
-        .add(0, axis_offset / 4, 4, cfg.color_palette[5])
-        .add(axis_offset / 2, axis_offset / 4, 6, cfg.color_palette[6])
+        Line(
+            cnv,
+            [axis_offset, axis_offset],
+            stroke_color=cfg.colors[5],
+        )
+        .add(-axis_offset / 2, 0)
+        .add(0, axis_offset / 4, 2, cfg.colors[6])
+        .add(axis_offset / 4, axis_offset / 4, 4, cfg.colors[7])
     )
-    print(line.line)
+    print("Line points", line.line)
 
     cv.imshow("Common Canvas", cnv)
     cv.waitKey(0)
