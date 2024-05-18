@@ -1,231 +1,48 @@
 """Figure Factory"""
 
-# pylint: disable=R0913, R0902, E1101, W0221, W0237, C0301
+# pylint: disable=E1101, W0237, R0913, R0902, C0301
 
-import dataclasses
-import time
-from pathlib import Path
-from typing import Union, Callable
+from dataclasses import dataclass, field
+from typing import Union, List, Tuple, Optional
 import numpy as np
 import cv2 as cv
+from utils import Utils, RGB
+from config import Config
 
 __version__ = "3.0.0"
 
 Cell = Union[int, float]
 
-Matrix = tuple[
-    tuple[Cell, Cell, Cell],
-    tuple[Cell, Cell, Cell],
-    tuple[int, int, int],
+Matrix = Tuple[
+    Tuple[Cell, Cell, Cell],
+    Tuple[Cell, Cell, Cell],
+    Tuple[int, int, int],
 ]
-RGB = tuple[int, int, int, float | None]
-Point = tuple[float, float]
-Points = list[Point]
-Canvas = list[tuple[int, int, int, int | None]]
-CanvasProps = tuple[int, tuple[int, int | None] | None]
+Point = Tuple[float, float]
+Points = List[Point]
+Canvas = List[Tuple[int, int, int, Union[int, None]]]
 
 
-@dataclasses.dataclass
-class Utils:
-    """Utils"""
-
-    @staticmethod
-    def hex_to_rgba(hex_str: str) -> RGB:
-        """Converts a HEX color to RGB"""
-
-        if hex_str:
-            # r = int(hex_str[0:2], 16)
-            # g = int(hex_str[2:4], 16)
-            # b = int(hex_str[4:6], 16)
-
-            rgba = []
-            hex_str = hex_str.lstrip("#")
-
-            if len(hex_str) in (3, 4):
-                return Utils.hex_to_rgba(f"#{''.join([hex * 2 for hex in hex_str])}")
-
-            if len(hex_str) == 6:
-                for i in range(0, 5, 2):
-                    rgba.insert(0, int(hex_str[i : i + 2], 16))
-            elif len(hex_str) == 8:
-                for i in range(0, 7, 2):
-                    color = int(hex_str[i : i + 2], 16)
-
-                    if i == 6:
-                        color = 1 / 255 * color
-                        rgba.append(color)
-
-                        break
-
-                    rgba.insert(0, color)
-
-            return tuple(rgba)
-
-        return None
-
-    @staticmethod
-    def rgba_to_hex(r: int, g: int, b: int, a: int = 255):
-        """Converts a RGB color to HEX"""
-
-        return f"#{r:02x}{g:02x}{b:02x}{a:02x}"  # "#%02x%02x%02x" % (r, g, b)
-
-    @staticmethod
-    def deg_to_rads(deg: float) -> float:
-        """Converts degrees to radians"""
-
-        return np.radians(deg)  # deg * np.pi / 180
-
-    @staticmethod
-    def rads_to_deg(rad: float) -> float:
-        """Converts radians to degrees"""
-
-        return np.degrees(rad)  # rad * 180 / np.pi
-
-    @staticmethod
-    def animate(animation: Callable[[], None], speed: float = 0.01) -> float:
-        """Makes animation"""
-
-        while animation():
-            time.sleep(speed)
-
-    @staticmethod
-    def description(name: str, props: list = None, args: list = None) -> float:
-        """Makes descripton for object"""
-
-        description = f"\n{name} ->"
-
-        if props and len(props):
-            description += "\n props:\n  " + "\n  ".join(props)
-
-        if args and len(args):
-            description += "\n args:\n  " + "\n  ".join(args)
-
-        return description + "\n"
-
-    @staticmethod
-    def get_path(path: str, flag: str = None) -> str:
-        """Get path"""
-
-        # Needs TODO: relative r, absolute a, parent p
-
-        files = Path.cwd().glob(f"**/{path}")
-
-        if flag == "All":
-            return list(files)
-
-        return list(files)[0]
-
-
-@dataclasses.dataclass
-class Config:
-    """
-    IMPORTANT: the first parameter is height
-
-    args: [ height:int, [ width:int, [ depth:int ]]]
-        - If passed as a single integer, represents the same value for both width and height, and the depth is determined by the `depth` argument or by default if argument `depth` is missing
-        - If passed two integers, represents (width, height), and the depth is determined by the `depth` argument or by default if argument `depth` is missing
-        - If passed three integers, represents (width, height, depth), but the depth is determined by the `depth` argument or the value passed if argument `depth` is missing
-
-    depth: int, optional
-        - If the value of depth goes beyond 1 to 4 inclusive, it changes to the nearest limit.
-
-    If there are no arguments, the default settings are taken (width=1024, height=768, depth=3)
-    """
-
-    default_cnv_props = 768, 1024, 3
-    cnv_props = default_cnv_props
-
-    default_colors = [
-        "#f00",  # 0 rgb("255 0 0") - red (Красный)
-        "#ff7400",  # 1 rgb("255 116 0")
-        "#ffaa00",  # 2 rgb("255 170 0")
-        "#ffd300",  # 3 rgb("255 211 0")
-        "#ff0",  # 4 rgb("255 255 0") - yellow (Желтый)
-        "#9fee00",  # 5 rgb("159 238 0")
-        "#00cc00",  # 6 rgb("0 204 0") - green (Зеленый)
-        "#009999",  # 7 rgb("0 153 153") - aqua (Голубой)
-        "#1240ab",  # 8 rgb("18 64 171") - blue (Синий)
-        "#3914b0",  # 9 rgb("57 20 176")
-        "#7109ab",  # 10 rgb("113 9 171")
-        "#cd0074",  # 11 rgb("205 0 116") - fuchsia (Розовый)
-        "#fff",  # 12 rgb("255 255 255") - white (Белый)
-        "#000",  # 13 rgb("0 0 0") - black (Черный)
-        "#808080",  # 14 rgb("128 128 128") - gray (Серый)
-        "#C0C0C0",  # 15 rgb("192 192 192") - silver (Светло-серый)
-    ]
-    colors = default_colors
-
-    def __init__(
-        self,
-        *props: CanvasProps,
-        depth: int = None,
-        colors: list[str] = None,  # Replaces default colors
-        add_colors: list[str] = None,  # Adds a set to the default colors
-    ) -> None:
-        self.width = self.default_cnv_props[1]
-        self.height = self.default_cnv_props[0]
-        self.depth = max(1, min(depth if depth else self.default_cnv_props[2], 4))
-
-        if colors:
-            self.colors = colors
-
-        if add_colors:
-            self.colors.extend(add_colors)
-
-        if len(props) == 1:
-            self.width = self.height = props[0]
-            self.cnv_props = (self.height, self.width, self.depth)
-
-        elif len(props) == 2:
-            self.width = props[0]
-            self.height = props[1]
-            self.cnv_props = (self.height, self.width, self.depth)
-
-        elif len(props) == 3:
-            self.width = props[0]
-            self.height = props[1]
-            self.depth = max(1, min(depth if depth else props[2], 4))
-            self.cnv_props = (self.height, self.width, self.depth)
-        else:
-            self.cnv_props = self.default_cnv_props
-
-    def __repr__(self):
-        return Utils.description(
-            self.__class__.__name__,
-            [
-                f"{prop}: {str(getattr(self, prop, None))}"
-                for prop in [
-                    "default_cnv_props",
-                    "cnv_props",
-                    "default_colors",
-                    "colors",
-                ]
-            ],
-            [
-                f"{prop}: {str(getattr(self, prop, None))}"
-                for prop in ["width", "height", "depth"]
-            ],
-        )
-
-    def __str__(self) -> str:
-        return repr(self)
-
-
-@dataclasses.dataclass
+@dataclass
 class Figure:
     """Figure"""
 
     x: float = 0
     y: float = 0
-    stroke_width: float | bool = False
-    stroke_color: str | bool = False
-    fill_color: str | bool = False
+    width: float = 0
+    height: float = 0
+    pivot: Point = field(default_factory=lambda: [0, 0])
+    stroke_width: Union[float, bool] = False
+    stroke_color: Union[str, bool] = False
+    fill_color: Union[str, bool] = False
     initial_props: Points = None
 
     def __init__(
         self,
         cnv: Canvas,
         points: Points,
+        width: float = width,
+        height: float = height,
         # **kwargs,
         offset_x: float = x,
         offset_y: float = y,
@@ -234,6 +51,8 @@ class Figure:
         fill_color: str = fill_color,
     ) -> None:
         self.cnv = cnv
+        self.width = width
+        self.height = height
         self.stroke_width = stroke_width
         self.stroke_color = stroke_color
         self.fill_color = fill_color
@@ -272,22 +91,22 @@ class Figure:
         ]
 
     @staticmethod
-    def get_skew_x_matrix(rad: float) -> Matrix:
+    def get_skew_x_matrix(deg: float) -> Matrix:
         """Returns skewX matrix"""
 
         return [
-            (1, np.tan(rad), 0),
+            (1, np.tan(deg), 0),
             (0, 1, 0),
             (0, 0, 1),
         ]
 
     @staticmethod
-    def get_skew_y_matrix(rad: float) -> Matrix:
+    def get_skew_y_matrix(deg: float) -> Matrix:
         """Returns skewY matrix"""
 
         return [
             (1, 0, 0),
-            (np.tan(rad), 1, 0),
+            (np.tan(deg), 1, 0),
             (0, 0, 1),
         ]
 
@@ -302,7 +121,9 @@ class Figure:
 
         self.points = points
 
-    def _get_stroke_width(self, weight: int | float | bool | None) -> int | None:
+    def _get_stroke_width(
+        self, weight: Optional[Union[int, float, bool]]
+    ) -> Union[int, None]:
         """Get weight"""
 
         if isinstance(weight, bool):
@@ -331,7 +152,7 @@ class Figure:
         return None
 
     def _get_stroke_color(  # pylint: disable=R0911
-        self, color: str | bool | None
+        self, color: Optional[Union[str | bool]]
     ) -> RGB | None:
         """Get color"""
 
@@ -364,7 +185,7 @@ class Figure:
         return None
 
     def _get_fill_color(  # pylint: disable=R0911
-        self, color: str | bool | None
+        self, color: Optional[Union[str | bool]]
     ) -> RGB | None:
         """Get color"""
 
@@ -390,6 +211,21 @@ class Figure:
         self.fill_color = None
 
         return None
+
+    def set_pivot(self, px: float, py: float = None) -> "Figure":
+        """Set Pivot"""
+
+        py = px if py is None else py
+        self.pivot = [px, py]
+
+        self._apply_matrix(
+            Figure.get_translate_matrix(
+                self.pivot[0] * self.width - self.width / 2,
+                self.pivot[1] * self.height - self.height / 2,
+            )
+        )
+
+        return self
 
     def translate(self, tx: float, ty: float = None) -> "Figure":
         """Translate"""
@@ -462,9 +298,9 @@ class Figure:
     def draw(
         self,
         matrix: Matrix = None,
-        stroke_width: int = False,
-        stroke_color: str = False,
-        fill_color: str = False,
+        stroke_width: Optional[Union[int, float, bool]] = False,
+        stroke_color: Optional[Union[str | bool]] = False,
+        fill_color: Optional[Union[str | bool]] = False,
     ) -> "Figure":
         """Draw figure"""
 
@@ -520,7 +356,7 @@ class Figure:
         return self
 
 
-@dataclasses.dataclass
+@dataclass
 class PolyOval(Figure):
     """PolyOval"""
 
@@ -531,29 +367,27 @@ class PolyOval(Figure):
     def __init__(
         self,
         cnv: Canvas,
-        width: int,
-        height: int,
-        start: int = start,
-        end: int = end,
+        width: float,
+        height: float,
+        start: float = start,
+        end: float = end,
         quality: float = quality,
         **kwargs,
     ) -> None:
-        self.width = width
-        self.height = height
         self.start = start
         self.end = end
         self.quality = quality
         self.points = [
             (
-                np.sin(Utils.deg_to_rads(degree)) * self.width / 2,
-                np.cos(Utils.deg_to_rads(degree)) * self.height / 2,
+                np.sin(Utils.deg_to_rads(degree)) * width / 2,
+                np.cos(Utils.deg_to_rads(degree)) * height / 2,
             )
             for degree in range(
                 self.start, self.end, round(20 * (1 - self.quality) + self.quality)
             )
         ]
 
-        super().__init__(cnv, self.points, **kwargs)
+        super().__init__(cnv, self.points, width, height, **kwargs)
 
     def __repr__(self):
         return Utils.description(
@@ -583,7 +417,7 @@ class PolyOval(Figure):
         return repr(self)
 
 
-@dataclasses.dataclass
+@dataclass
 class Oval(PolyOval):
     """Oval"""
 
@@ -593,26 +427,24 @@ class Oval(PolyOval):
         super().__init__(*args, **kwargs)
 
 
-@dataclasses.dataclass
+@dataclass
 class Rectangle(Figure):
     """Rectangle"""
 
     def __init__(self, cnv: Canvas, width, height, **kwargs) -> None:
         self.cnv = cnv
-        self.width = width
-        self.height = height
 
-        p1 = (self.width / -2, self.height / -2)
-        p2 = (p1[0] + self.width, p1[1])
-        p3 = (p2[0], p1[1] + self.height)
+        p1 = (width / -2, height / -2)
+        p2 = (p1[0] + width, p1[1])
+        p3 = (p2[0], p1[1] + height)
         p4 = (p1[0], p3[1])
 
         self.points = [p1, p2, p3, p4]
 
-        super().__init__(self.cnv, self.points, **kwargs)
+        super().__init__(self.cnv, self.points, width, height, **kwargs)
 
 
-@dataclasses.dataclass
+@dataclass
 class Polyline(Figure):
     """Polyline"""
 
@@ -623,7 +455,7 @@ class Polyline(Figure):
         super().__init__(self.cnv, self.points, **kwargs)
 
 
-@dataclasses.dataclass
+@dataclass
 class Line(Figure):
     """Line"""
 
@@ -639,11 +471,12 @@ class Line(Figure):
         self,
         start_point: Point,
         end_point: Point,
-        stroke_width: int = False,
-        stroke_color: str = False,
+        stroke_width: Optional[Union[int, bool]] = False,
+        stroke_color: Optional[Union[str, bool]] = False,
     ) -> None:
         """Draw line"""
 
+        self.line = [end_point]
         self.points = [start_point, end_point]
         self.stroke_width = stroke_width if stroke_width else self.stroke_width
         self.stroke_color = stroke_color if stroke_color else self.stroke_color
@@ -750,13 +583,18 @@ def test():
         # 7
         fig.reset().translate(150, 650).draw()
         # 8
-        fig.translate(250, 0).scale(0.5, 1).rotate(rotation_angle * -3).draw(
-            stroke_width=2
-        )
+        fig.set_pivot(0.5, 1).translate(250, 0).scale(0.5, 1).rotate(
+            rotation_angle * -3
+        ).draw(stroke_width=2)
         # 9
-        fig.move(650, 650).draw(fill_color=cfg.colors[i % len(cfg.colors)])
+        fig.move(650, 650).draw(fill_color=cfg.colors[i % len(cfg.colors)]).set_pivot(
+            0.5, 0.5
+        )
         # 10
         fig.translate(-500, 250).scale(1, 0.5).rotate(-45).draw(
+            stroke_color=cfg.colors[(i + 6) % len(cfg.colors)],
+        )
+        fig.translate(250, 0).rotate(-15).skew_x(15).skew_y(15).draw(
             stroke_color=cfg.colors[(i + 6) % len(cfg.colors)],
         )
 

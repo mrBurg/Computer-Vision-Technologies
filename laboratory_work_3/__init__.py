@@ -1,10 +1,9 @@
 """Laboratory work 3"""
 
-# pylint: disable=E1101, W0603
+# pylint: disable=E1101
 
 import sys
 from pathlib import Path
-from random import random, choice
 import numpy as np
 import cv2 as cv
 
@@ -61,13 +60,19 @@ draw_coords()
 
 prllppd_vertex = []
 
-rect = Rectangle(cnv, prlpd_config[0], prlpd_config[1], offset_x=CX, offset_y=CY).draw()
+rect = (
+    Rectangle(cnv, prlpd_config[0], prlpd_config[1] * 0.75, offset_x=CX, offset_y=CY)
+    .set_pivot(1, 0.5)
+    .skew_x(45)
+    # .rotate(45)
+    .draw()
+)
 
-prllppd_vertex.extend(rect.points)
+# prllppd_vertex.extend(rect.points)
 
-for i in range(2):
-    rect = rect.translate(50, -50).skew_x(45).draw()
-    prllppd_vertex.extend(rect.points)
+# for i in range(2):
+#     rect = rect.translate(50, -50).skew_x(45).draw()
+#     prllppd_vertex.extend(rect.points)
 
 # print(prllppd_vertex)
 
@@ -79,29 +84,29 @@ cv.namedWindow(WIN_NAME, cv.WINDOW_AUTOSIZE)
 cv.imshow(WIN_NAME, cnv)
 
 
-def draw_parallelepiped() -> None:
-    """Draw parallelepiped"""
+# def draw_parallelepiped() -> None:
+#     """Draw parallelepiped"""
 
-    # rect.draw(stroke_width=5).move(prlpd_config[2], prlpd_config[2])
+#     # rect.draw(stroke_width=5).move(prlpd_config[2], prlpd_config[2])
 
 
-def animation() -> None:
-    """Main animation"""
+# def animation() -> None:
+#     """Main animation"""
 
-    cnv.fill(255)
-    cnv[:] = BG_COLOR
+#     cnv.fill(255)
+#     cnv[:] = BG_COLOR
 
-    draw_parallelepiped()
-    draw_coords()
+#     draw_parallelepiped()
+#     draw_coords()
 
-    cv.namedWindow(WIN_NAME, cv.WINDOW_AUTOSIZE)
-    # cv.setMouseCallback(WIN_NAME, mouse_callback)
-    cv.imshow(WIN_NAME, cnv)
+#     cv.namedWindow(WIN_NAME, cv.WINDOW_AUTOSIZE)
+#     # cv.setMouseCallback(WIN_NAME, mouse_callback)
+#     cv.imshow(WIN_NAME, cnv)
 
-    if cv.waitKey(1) & 0xFF == ord("q"):
-        return False
+#     if cv.waitKey(1) & 0xFF == ord("q"):
+#         return False
 
-    return True
+#     return True
 
 
 print("Press 'q' for stop")

@@ -12,5 +12,9 @@
     {
       "path": "E:/Education/Магистратура/Practise/Нейромережі/Ноутбуки (практика)"
     }
-  ]
+  ],
+  "settings": {
+    "python.analysis.extraPaths": ["${workspaceFolder}/libs"],
+    "python.autoComplete.extraPaths": ["./libs"]
+  }
 }
