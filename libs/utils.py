@@ -4,7 +4,7 @@ from dataclasses import dataclass
 import time
 from pathlib import Path
 from typing import Callable, Tuple, Union, List, Optional
-import numpy as np
+from math import radians, degrees
 
 __version__ = "1.0.0"
 
@@ -33,6 +33,7 @@ class Utils:
             if len(hex_str) == 6:
                 for i in range(0, 5, 2):
                     rgba.insert(0, int(hex_str[i : i + 2], 16))
+
             elif len(hex_str) == 8:
                 for i in range(0, 7, 2):
                     color = int(hex_str[i : i + 2], 16)
@@ -59,13 +60,13 @@ class Utils:
     def deg_to_rads(deg: float) -> float:
         """Converts degrees to radians"""
 
-        return np.radians(deg)  # deg * np.pi / 180
+        return radians(deg)  # deg * np.pi / 180
 
     @staticmethod
     def rads_to_deg(rad: float) -> float:
         """Converts radians to degrees"""
 
-        return np.degrees(rad)  # rad * 180 / np.pi
+        return degrees(rad)  # rad * 180 / np.pi
 
     @staticmethod
     def animate(animation: Callable[[], None], speed=0.01) -> float:

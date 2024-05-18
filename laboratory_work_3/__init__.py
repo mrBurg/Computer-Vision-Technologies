@@ -1,6 +1,6 @@
 """Laboratory work 3"""
 
-# pylint: disable=E1101
+# pylint: disable=E1101, C0413
 
 import sys
 from pathlib import Path
@@ -13,9 +13,13 @@ LIBS_PATH = Path.cwd().resolve()
 sys.path.append(str(LIBS_PATH))
 
 try:
-    from figure_factory import Config, Utils, Rectangle, Line  # type: ignore
+    from figure_factory_3d import Utils, Config, Parallelepiped  # type: ignore
 except ImportError:
-    from libs.figure_factory import Config, Utils, Rectangle, Line
+    from libs.figure_factory_3d import Utils, Config, Parallelepiped
+try:
+    from figure_factory import Rectangle  # type: ignore
+except ImportError:
+    from libs.figure_factory import Rectangle
 
 cfg = Config()
 
@@ -45,30 +49,80 @@ prlpd_config = 400, 300, 200  # width, height, length
 
 #     if event == cv.EVENT_MOUSEMOVE and MOUSE_DOWN:
 #         dot_coords.append([x, y])
-
-line = Line(cnv, stroke_color=cfg.colors[6])
-
-
-def draw_coords() -> None:
-    """Draw coords"""
-
-    line.draw([0, CY], [cfg.width, CY]).draw([CX, 0], [CX, cfg.height])
-
-
-draw_coords()
-
-
-prllppd_vertex = []
-
-rect = (
-    Rectangle(cnv, prlpd_config[0], prlpd_config[1] * 0.75, offset_x=CX, offset_y=CY)
-    .set_pivot(1, 0.5)
-    .skew_x(45)
-    # .rotate(45)
-    .draw()
+rect = Rectangle(cnv, 800, 600)
+print(rect)
+prllppd = Parallelepiped(
+    cnv,
+    prlpd_config[0],
+    prlpd_config[1],
+    prlpd_config[2],
+    offset_x=150,
+    offset_y=300,
+    offset_z=450,
 )
 
-# prllppd_vertex.extend(rect.points)
+print(prllppd)
+# print(prllppd)
+# print(prllppd.width, prllppd.height, prllppd.length)
+
+# line = Line(cnv, stroke_color=cfg.colors[6])
+
+
+# def draw_coords() -> None:
+#     """Draw coords"""
+
+#     line.draw([0, CY], [cfg.width, CY]).draw([CX, 0], [CX, cfg.height])
+
+
+# draw_coords()
+
+
+# prllppd_vertex = np.array([]).reshape(0, 2)
+
+# rect = Rectangle(
+#     cnv, prlpd_config[0], prlpd_config[1], offset_x=CX, offset_y=CY, stroke_width=4
+# )
+# rect.draw()
+# prllppd_vertex = np.append(prllppd_vertex, rect.points, axis=0)
+
+# rect.translate(prlpd_config[1] * 0.5, prlpd_config[1] * -0.5)
+# rect.draw()
+# prllppd_vertex = np.append(prllppd_vertex, rect.points, axis=0)
+
+# # print(prllppd_vertex)
+
+# top = np.array([], DType).reshape(0, 2)
+# bottom = np.array([], DType).reshape(0, 2)
+# left = np.array([], DType).reshape(0, 2)
+# right = np.array([], DType).reshape(0, 2)
+
+# for i in range(0, len(prllppd_vertex), 4):
+#     vertices = prllppd_vertex[i : i + 4]
+
+#     top = np.append(top, vertices[0:2], axis=0)
+#     bottom = np.append(bottom, vertices[2:4], axis=0)
+#     left = np.append(left, [vertices[0], vertices[3]], axis=0)
+#     right = np.append(right, vertices[1:3], axis=0)
+
+# # top[-1], top[-2] = top[-2], top[-1].copy()
+# # bottom[-1], bottom[-2] = bottom[-2], bottom[-1].copy()
+# # left[-1], left[-2] = left[-2], left[-1].copy()
+# # right[-1], right[-2] = right[-2], right[-1].copy()
+
+# top = np.concatenate((top[:2], top[-1:], top[-2:-1]))
+# bottom = np.concatenate((bottom[:2], bottom[-1:], bottom[-2:-1]))
+# left = np.concatenate((left[:2], left[-1:], left[-2:-1]))
+# right = np.concatenate((right[:2], right[-1:], right[-2:-1]))
+
+# Polyline(cnv, top).draw(stroke_color=cfg.colors[0], stroke_width=4)
+# Polyline(cnv, bottom).draw(stroke_color=cfg.colors[1], stroke_width=4)
+# Polyline(cnv, left).draw(stroke_color=cfg.colors[2], stroke_width=4)
+# Polyline(cnv, right).draw(stroke_color=cfg.colors[3], stroke_width=4)
+######################################
+
+# Polyline(cnv, prllppd_vertex).draw()
+# cube = Rectangle(cnv, )
+
 
 # for i in range(2):
 #     rect = rect.translate(50, -50).skew_x(45).draw()

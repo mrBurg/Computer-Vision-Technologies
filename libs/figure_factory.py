@@ -11,15 +11,18 @@ from config import Config
 
 __version__ = "3.0.0"
 
-Cell = Union[int, float]
+__all__ = []
 
+NDArray = np.ndarray
+DType = np.float16  # np.dtype([(np.int, np.int)])
+Cell = Union[int, float]
 Matrix = Tuple[
     Tuple[Cell, Cell, Cell],
     Tuple[Cell, Cell, Cell],
     Tuple[int, int, int],
 ]
 Point = Tuple[float, float]
-Points = List[Point]
+Points = NDArray[Point, DType]
 Canvas = List[Tuple[int, int, int, Union[int, None]]]
 
 
@@ -31,7 +34,7 @@ class Figure:
     y: float = 0
     width: float = 0
     height: float = 0
-    pivot: Point = field(default_factory=lambda: [0, 0])
+    pivot: Point = field(default_factory=lambda: [0.5, 0.5])
     stroke_width: Union[float, bool] = False
     stroke_color: Union[str, bool] = False
     fill_color: Union[str, bool] = False
@@ -57,6 +60,7 @@ class Figure:
         self.stroke_color = stroke_color
         self.fill_color = fill_color
         self.initial_props = self.points = points
+        self.pivot = [0.5, 0.5]
 
         self.translate(offset_x, offset_y)
 
@@ -112,7 +116,6 @@ class Figure:
 
     def _apply_matrix(self, matrix: Matrix) -> None:
         matrix = np.array(matrix).T
-
         points = np.array([]).reshape(0, 2)
 
         for i in self.points:
@@ -220,8 +223,8 @@ class Figure:
 
         self._apply_matrix(
             Figure.get_translate_matrix(
-                self.pivot[0] * self.width - self.width / 2,
-                self.pivot[1] * self.height - self.height / 2,
+                self.width * 0.5 - self.pivot[0] * self.width,
+                self.height * 0.5 - self.pivot[1] * self.height,
             )
         )
 
@@ -308,6 +311,8 @@ class Figure:
             self._apply_matrix(self.get_translate_matrix(-self.x, -self.y))
             self._apply_matrix(matrix)
             self._apply_matrix(self.get_translate_matrix(self.x, self.y))
+            self.x += matrix[0][2]
+            self.y += matrix[1][2]
 
         stroke_width = self._get_stroke_width(stroke_width)
         stroke_color = self._get_stroke_color(stroke_color)
@@ -377,15 +382,18 @@ class PolyOval(Figure):
         self.start = start
         self.end = end
         self.quality = quality
-        self.points = [
-            (
-                np.sin(Utils.deg_to_rads(degree)) * width / 2,
-                np.cos(Utils.deg_to_rads(degree)) * height / 2,
-            )
-            for degree in range(
-                self.start, self.end, round(20 * (1 - self.quality) + self.quality)
-            )
-        ]
+        self.points = np.array(
+            [
+                (
+                    np.sin(Utils.deg_to_rads(degree)) * width * 0.5,
+                    np.cos(Utils.deg_to_rads(degree)) * height * 0.5,
+                )
+                for degree in range(
+                    self.start, self.end, round(20 * (1 - self.quality) + self.quality)
+                )
+            ],
+            dtype=DType,
+        )
 
         super().__init__(cnv, self.points, width, height, **kwargs)
 
@@ -439,7 +447,7 @@ class Rectangle(Figure):
         p3 = (p2[0], p1[1] + height)
         p4 = (p1[0], p3[1])
 
-        self.points = [p1, p2, p3, p4]
+        self.points = np.array([p1, p2, p3, p4], DType)
 
         super().__init__(self.cnv, self.points, width, height, **kwargs)
 
@@ -450,7 +458,7 @@ class Polyline(Figure):
 
     def __init__(self, cnv: Canvas, points: Points, **kwargs) -> None:
         self.cnv = cnv
-        self.points = points
+        self.points = np.array(points, DType)
 
         super().__init__(self.cnv, self.points, **kwargs)
 
@@ -463,7 +471,9 @@ class Line(Figure):
 
     def __init__(self, cnv: Canvas, point: Point = None, **kwargs) -> None:
         self.cnv = cnv
-        self.line = self.points = [self.point if point is None else point]
+        self.line = self.points = np.array(
+            [self.point if point is None else point], DType
+        )
 
         super().__init__(self.cnv, self.points, **kwargs)
 
@@ -477,7 +487,7 @@ class Line(Figure):
         """Draw line"""
 
         self.line = [end_point]
-        self.points = [start_point, end_point]
+        self.points = np.array([start_point, end_point], DType)
         self.stroke_width = stroke_width if stroke_width else self.stroke_width
         self.stroke_color = stroke_color if stroke_color else self.stroke_color
 
@@ -496,9 +506,8 @@ class Line(Figure):
         p1 = self.line[-1]
         p2 = [p1[0] + x, p1[1] + y]
 
-        self.line.append(p2)
-
-        self.points = [p1, p2]
+        self.line = np.append(self.line, [p2], axis=0)
+        self.points = np.array([p1, p2], DType)
 
         super().draw(None, self.stroke_width, self.stroke_color)
 
@@ -532,10 +541,11 @@ def test():
     rect = Rectangle(cnv, width, height, offset_x=axis_offset, offset_y=axis_offset)
     polyline = Polyline(
         cnv,
-        [(0, 0.3), (-20, width / 2), (20, width / 2)],
+        [(0, 0.3), (-20, width * 0.5), (20, width * 0.5)],
         offset_x=axis_offset,
         offset_y=axis_offset,
     )
+    pivot = Oval(cnv, 10, 10, fill_color=cfg.colors[0])
     line = Line(cnv)
 
     for i in range(0, cfg.height, 50):
@@ -545,13 +555,15 @@ def test():
 
     for i, fig in enumerate([rect, oval, polyline]):
         # 1
-        fig.draw(fill_color=cfg.colors[i % len(cfg.colors)])
+        fig.set_pivot(0.45, 0.45).draw(fill_color=cfg.colors[i % len(cfg.colors)])
+        pivot.move(fig.x, fig.y).draw()
         # 2
         fig.translate(250, 0).draw(
             stroke_width=5,
             stroke_color=cfg.colors[(i + 6) % len(cfg.colors)],
             fill_color=cfg.colors[i % len(cfg.colors)],
         )
+        pivot.move(fig.x, fig.y).draw()
         # 3
         fig.translate(250, 0).scale(1, 0.5).draw(
             stroke_color=cfg.colors[i % len(cfg.colors)],
@@ -561,14 +573,17 @@ def test():
                 else None
             ),
         )
+        pivot.move(fig.x, fig.y).draw()
         # 4
         fig.translate(-500, 250).rotate(-rotation_angle).draw(
             stroke_color=None, fill_color=None
         )
+        pivot.move(fig.x, fig.y).draw()
         # 5
         fig.translate(250, 0).rotate(rotation_angle).scale(0.5, 2).draw(
             stroke_width=None
         )
+        pivot.move(fig.x, fig.y).draw()
         # 6
         fig.draw(
             [
@@ -580,23 +595,28 @@ def test():
             stroke_color=(cfg.colors[(i + 6) % len(cfg.colors)]),
             fill_color=(cfg.colors[i % len(cfg.colors)]),
         )
+        pivot.move(fig.x, fig.y).draw()
         # 7
         fig.reset().translate(150, 650).draw()
+        pivot.move(fig.x, fig.y).draw()
         # 8
-        fig.set_pivot(0.5, 1).translate(250, 0).scale(0.5, 1).rotate(
+        fig.set_pivot(0.25, 0.25).translate(250, 0).scale(0.5, 1).rotate(
             rotation_angle * -3
         ).draw(stroke_width=2)
+        pivot.move(fig.x, fig.y).draw()
         # 9
-        fig.move(650, 650).draw(fill_color=cfg.colors[i % len(cfg.colors)]).set_pivot(
-            0.5, 0.5
-        )
+        fig.move(650, 650).draw(fill_color=cfg.colors[i % len(cfg.colors)])
+        pivot.move(fig.x, fig.y).draw()
         # 10
         fig.translate(-500, 250).scale(1, 0.5).rotate(-45).draw(
             stroke_color=cfg.colors[(i + 6) % len(cfg.colors)],
         )
-        fig.translate(250, 0).rotate(-15).skew_x(15).skew_y(15).draw(
+        pivot.move(fig.x, fig.y).draw()
+        # 11
+        fig.translate(250, 0).rotate(-45).skew_x(15).skew_y(15).draw(
             stroke_color=cfg.colors[(i + 6) % len(cfg.colors)],
         )
+        pivot.move(fig.x, fig.y).draw()
 
     line = (
         Line(
@@ -604,7 +624,7 @@ def test():
             [axis_offset, axis_offset],
             stroke_color=cfg.colors[5],
         )
-        .add(-axis_offset / 2, 0)
+        .add(-axis_offset * 0.5, 0)
         .add(0, axis_offset / 4, 2, cfg.colors[6])
         .add(axis_offset / 4, axis_offset / 4, 4, cfg.colors[7])
     )
