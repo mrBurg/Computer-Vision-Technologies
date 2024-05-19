@@ -215,7 +215,7 @@ class Figure:
 
         return None
 
-    def set_pivot(self, px: float, py: float = None) -> "Figure":
+    def set_pivot(self, px: float, py: Optional[float] = None) -> "Figure":
         """Set Pivot"""
 
         py = px if py is None else py
@@ -230,7 +230,7 @@ class Figure:
 
         return self
 
-    def translate(self, tx: float, ty: float = None) -> "Figure":
+    def translate(self, tx: float, ty: Optional[float] = None) -> "Figure":
         """Translate"""
 
         ty = tx if ty is None else ty
@@ -240,7 +240,7 @@ class Figure:
 
         return self
 
-    def scale(self, sw: float, sh: float = None) -> "Figure":
+    def scale(self, sw: float, sh: Optional[float] = None) -> "Figure":
         """Scale"""
 
         self._apply_matrix(Figure.get_translate_matrix(-self.x, -self.y))
@@ -279,7 +279,7 @@ class Figure:
 
         return self
 
-    def move(self, mx: float, my: float = None) -> "Figure":
+    def move(self, mx: float, my: Optional[float] = None) -> "Figure":
         """Move"""
 
         self._apply_matrix(Figure.get_translate_matrix(-self.x, -self.y))
@@ -300,7 +300,7 @@ class Figure:
 
     def draw(
         self,
-        matrix: Matrix = None,
+        matrix: Optional[Matrix] = None,
         stroke_width: Optional[Union[int, float, bool]] = False,
         stroke_color: Optional[Union[str | bool]] = False,
         fill_color: Optional[Union[str | bool]] = False,
@@ -439,7 +439,7 @@ class Oval(PolyOval):
 class Rectangle(Figure):
     """Rectangle"""
 
-    def __init__(self, cnv: Canvas, width, height, **kwargs) -> None:
+    def __init__(self, cnv: Canvas, width: float, height: float, **kwargs) -> None:
         self.cnv = cnv
 
         p1 = (width / -2, height / -2)
@@ -469,7 +469,7 @@ class Line(Figure):
 
     point = [0, 0]
 
-    def __init__(self, cnv: Canvas, point: Point = None, **kwargs) -> None:
+    def __init__(self, cnv: Canvas, point: Optional[Point] = None, **kwargs) -> None:
         self.cnv = cnv
         self.line = self.points = np.array(
             [self.point if point is None else point], DType
@@ -496,7 +496,7 @@ class Line(Figure):
         return self
 
     def add(
-        self, x: int, y: int, stroke_width: int = 0, stroke_color: str = None
+        self, x: int, y: int, stroke_width: int = 0, stroke_color: Optional[str] = None
     ) -> None:
         """Add line"""
 
@@ -517,23 +517,12 @@ class Line(Figure):
 def test():
     """Test function"""
 
-    cfg = Config(768, 1024)
-
-    print("-" * 10)
-    print(cfg)
-    print(f"45 degrees in radians is equal to: {Utils.deg_to_rads(45)}")
-    print(
-        f"{Utils.deg_to_rads(45)} radians in degrees is equal to: {Utils.rads_to_deg(Utils.deg_to_rads(45))}"
-    )
-    print(
-        f"Converting HEX #ff0000[ff] (#f00[f]) to RGB is equal to: {Utils.hex_to_rgba(cfg.colors[11])}"
-    )
-    print("-" * 10)
-
     width = 200
     height = width
     axis_offset = width * 0.75
     rotation_angle = 45
+
+    cfg = Config(768, 1024)
 
     cnv = np.full(cfg.cnv_props, 255, dtype=np.uint8)
 
@@ -546,12 +535,8 @@ def test():
         offset_y=axis_offset,
     )
     pivot = Oval(cnv, 10, 10, fill_color=cfg.colors[0])
-    line = Line(cnv)
 
-    for i in range(0, cfg.height, 50):
-        line.draw([0, i], [cfg.width, i], stroke_color=cfg.colors[6]).draw(
-            [i, 0], [i, cfg.height]
-        )
+    cfg.grid(cnv, color=Utils.hex_to_rgba(cfg.colors[6]))
 
     for i, fig in enumerate([rect, oval, polyline]):
         # 1

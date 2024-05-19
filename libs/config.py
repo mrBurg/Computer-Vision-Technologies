@@ -1,8 +1,12 @@
 """Config"""
 
+# pylint: disable=E1101
+
 import dataclasses
 from typing import List, Optional, Union, Tuple
 from utils import Utils
+import cv2 as cv
+import numpy as np
 
 __version__ = "1.0.0"
 
@@ -46,6 +50,16 @@ class Config:
         "#808080",  # 14 rgb("128 128 128") - gray (Серый)
         "#C0C0C0",  # 15 rgb("192 192 192") - silver (Светло-серый)
     ]
+    log_colors = {
+        "RED": "\033[31m",
+        "GREEN": "\033[32m",
+        "YELLOW": "\033[33m",
+        "BLUE": "\033[34m",
+        "MAGENTA": "\033[35m",
+        "CYAN": "\033[36m",
+        "WHITE": "\033[37m",
+        "RESET": "\033[0m",
+    }
     colors = default_colors
 
     def __init__(
@@ -82,6 +96,45 @@ class Config:
         else:
             self.cnv_props = self.default_cnv_props
 
+    def grid(
+        self,
+        cnv,
+        size=50,
+        color: Tuple[np.int8, np.int8, np.int8] = (0, 0, 0),
+        stroke_width: int = 1,
+    ) -> None:
+        """Grid"""
+
+        for i in range(0, self.width, size):
+            cv.line(cnv, (i, 0), (i, self.height), color, stroke_width)
+
+            if i % 50 == 0:
+                cv.putText(
+                    cnv,
+                    str(i),
+                    (i, 15),
+                    cv.FONT_HERSHEY_SIMPLEX,
+                    0.5,
+                    color,
+                    1,
+                    cv.LINE_AA,
+                )
+
+        for i in range(0, self.height, size):
+            cv.line(cnv, (0, i), (self.width, i), color, stroke_width)
+
+            if i % 50 == 0:
+                cv.putText(
+                    cnv,
+                    str(i),
+                    (0, i),
+                    cv.FONT_HERSHEY_SIMPLEX,
+                    0.5,
+                    color,
+                    1,
+                    cv.LINE_AA,
+                )
+
     def __repr__(self):
         return Utils.description(
             self.__class__.__name__,
@@ -92,6 +145,7 @@ class Config:
                     "cnv_props",
                     "default_colors",
                     "colors",
+                    "log_colors",
                 ]
             ],
             [
@@ -102,3 +156,29 @@ class Config:
 
     def __str__(self) -> str:
         return repr(self)
+
+
+def test():
+    """Test function"""
+
+    win_name = "Window"
+
+    cfg = Config()
+
+    print("\033[33m")
+    print(cfg)
+    print("\033[0m")
+
+    cnv = np.full(cfg.cnv_props, 255, dtype=np.uint8)
+
+    cfg.grid(cnv, 25)
+    cfg.grid(cnv, 100, (0, 127, 0), stroke_width=2)
+
+    cv.namedWindow(win_name, cv.WINDOW_AUTOSIZE)
+    cv.imshow(win_name, cnv)
+    cv.waitKey(0)
+    cv.destroyAllWindows()
+
+
+if __name__ == "__main__":
+    test()

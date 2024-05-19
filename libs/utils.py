@@ -51,10 +51,10 @@ class Utils:
         return None
 
     @staticmethod
-    def rgba_to_hex(r: int, g: int, b: int, a=255):
+    def rgba_to_hex(r: int, g: int, b: int):
         """Converts a RGB color to HEX"""
 
-        return f"#{r:02x}{g:02x}{b:02x}{a:02x}"  # "#%02x%02x%02x" % (r, g, b)
+        return f"#{r:02x}{g:02x}{b:02x}"  # "#%02x%02x%02x" % (r, g, b)
 
     @staticmethod
     def deg_to_rads(deg: float) -> float:
@@ -103,3 +103,23 @@ class Utils:
             return list(files)
 
         return list(files)[0]
+
+
+def test():
+    """Test function"""
+
+    print("\033[33m")
+    print(f"HEX #ff0000[ff] (#f00[f]) to RGB is equal to: {Utils.hex_to_rgba('#ffff')}")
+    print(
+        f"RGB (255, 255, 255) to HEX is equal to: {Utils.rgba_to_hex(*Utils.hex_to_rgba('#fff'))}"
+    )
+
+    print(f"45 degrees in radians is equal to: {Utils.deg_to_rads(45)}")
+    print(
+        f"{Utils.deg_to_rads(45)} radians in degrees is equal to: {Utils.rads_to_deg(Utils.deg_to_rads(45))}"
+    )
+    print("\033[0m")
+
+
+if __name__ == "__main__":
+    test()

@@ -3,29 +3,21 @@
 # pylint: disable=E1101, W0237, R0913, R0902, C0301
 
 from dataclasses import dataclass, field
-from typing import Union, List, Tuple
+from typing import Union, Tuple
 import numpy as np
-
-# import cv2 as cv
 from utils import Utils
 from config import Config
-from figure_factory import Figure
+from figure_factory import Figure, Rectangle, Canvas, Cell, Point, Points
 
 __version__ = "1.0.0"
 
 __all__ = ["Utils", "Config"]
 
-NDArray = np.ndarray
-DType = np.float16  # np.dtype([(np.int, np.int)])
-Cell = Union[int, float]
 Matrix = Tuple[
-    Tuple[Cell, Cell, Cell],
-    Tuple[Cell, Cell, Cell],
-    Tuple[int, int, int],
+    Tuple[Cell, Cell, Cell, Cell],
+    Tuple[Cell, Cell, Cell, Cell],
+    Tuple[int, int, int, int],
 ]
-Point = Tuple[float, float]
-Points = NDArray[Point, DType]
-Canvas = List[Tuple[int, int, int, Union[int, None]]]
 
 
 @dataclass
@@ -51,8 +43,7 @@ class Figure3D(Figure):
         width: float = width,
         height: float = height,
         length: float = length,
-        **kwargs,
-        # offset_z: float = z,
+        **kwargs
     ) -> None:
         self.cnv = cnv
         self.width = width
@@ -60,9 +51,11 @@ class Figure3D(Figure):
         self.length = length
         self.initial_props = self.points = points
         self.pivot = [0.5, 0.5]
-        self.z = kwargs.pop("offset_z", None)
+        offset_x = getattr(kwargs, "offset_x", self.x)
+        offset_y = getattr(kwargs, "offset_y", self.y)
+        self.z = kwargs.pop("offset_z", self.z)
 
-        # self.translate(offset_x, offset_y)
+        self.translate(offset_x, offset_y)
 
         super().__init__(self.cnv, self.points, self.width, self.height, **kwargs)
 
@@ -235,33 +228,22 @@ class Figure3D(Figure):
     #     stroke_color = self._get_stroke_color(stroke_color)
     #     fill_color = self._get_fill_color(fill_color)
 
-    #     if isinstance(self, Line):
-    #         points = np.array([self.points[0], self.points[1]], dtype=np.int32)
+    #     points = [np.array(self.points, dtype=np.int32)]
 
-    #         cv.line(
-    #             self.cnv,
-    #             points[0],
-    #             points[1],
-    #             stroke_color,
-    #             1 if stroke_width < 1 else stroke_width,
-    #         )
-    #     else:
-    #         points = [np.array(self.points, dtype=np.int32)]
+    #     cv.polylines(
+    #         self.cnv,
+    #         points,
+    #         True,
+    #         stroke_color,
+    #         (
+    #             int(round(stroke_width * 2))
+    #             if fill_color and stroke_width
+    #             else stroke_width
+    #         ),
+    #     )
 
-    #         cv.polylines(
-    #             self.cnv,
-    #             points,
-    #             True,
-    #             stroke_color,
-    #             (
-    #                 int(round(stroke_width * 2))
-    #                 if fill_color and stroke_width
-    #                 else stroke_width
-    #             ),
-    #         )
-
-    #         if fill_color:
-    #             cv.fillPoly(self.cnv, points, fill_color)
+    #     if fill_color:
+    #         cv.fillPoly(self.cnv, points, fill_color)
 
     #     return self
 
@@ -279,20 +261,23 @@ class Figure3D(Figure):
 
 
 @dataclass
-class Parallelepiped(Figure3D, Figure):
+class Parallelepiped(Figure3D):
     """Parallelepiped"""
 
     def __init__(self, cnv: Canvas, width, height, length, **kwargs) -> None:
         self.cnv = cnv
 
-        p1 = (width / -2, height / -2)
-        p2 = (p1[0] + width, p1[1])
-        p3 = (p2[0], p1[1] + height)
-        p4 = (p1[0], p3[1])
+        prllppd_vertex = np.array([]).reshape(0, 2)
+        z = kwargs.pop("offset_z", None)
 
-        self.points = np.array([p1, p2, p3, p4], DType)
+        rect = Rectangle(cnv, width, height, **kwargs)
+        # rect.draw()
+        prllppd_vertex = np.append(prllppd_vertex, rect.points, axis=0)
+
+        rect.translate(length, length)
+        # rect.draw()
+        prllppd_vertex = np.append(prllppd_vertex, rect.points, axis=0)
+
+        self.points = prllppd_vertex
 
         super().__init__(self.cnv, self.points, width, height, length, **kwargs)
-
-        self.draw()
-        print(self.draw)

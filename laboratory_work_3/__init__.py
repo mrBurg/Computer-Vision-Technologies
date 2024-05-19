@@ -1,6 +1,6 @@
 """Laboratory work 3"""
 
-# pylint: disable=E1101, C0413
+# pylint: disable=E1101, C0412
 
 import sys
 from pathlib import Path
@@ -13,13 +13,14 @@ LIBS_PATH = Path.cwd().resolve()
 sys.path.append(str(LIBS_PATH))
 
 try:
-    from figure_factory_3d import Utils, Config, Parallelepiped  # type: ignore
+    from figure_factory_3d import Utils, Config, Parallelepiped
 except ImportError:
     from libs.figure_factory_3d import Utils, Config, Parallelepiped
+
 try:
-    from figure_factory import Rectangle  # type: ignore
+    from figure_factory import Line
 except ImportError:
-    from libs.figure_factory import Rectangle
+    from libs.figure_factory import Line
 
 cfg = Config()
 
@@ -30,7 +31,7 @@ CX = cfg.width / 2
 CY = cfg.height / 2
 BG_COLOR = Utils.hex_to_rgba(cfg.colors[12])
 
-prlpd_config = 400, 300, 200  # width, height, length
+prllppd_config = 400, 300, 50  # width, height, length
 
 # def mouse_callback(event, x, y, _flags, _params):
 #     """Mouse callback"""
@@ -49,32 +50,20 @@ prlpd_config = 400, 300, 200  # width, height, length
 
 #     if event == cv.EVENT_MOUSEMOVE and MOUSE_DOWN:
 #         dot_coords.append([x, y])
-rect = Rectangle(cnv, 800, 600)
-print(rect)
-prllppd = Parallelepiped(
-    cnv,
-    prlpd_config[0],
-    prlpd_config[1],
-    prlpd_config[2],
-    offset_x=150,
-    offset_y=300,
-    offset_z=450,
-)
 
-print(prllppd)
-# print(prllppd)
-# print(prllppd.width, prllppd.height, prllppd.length)
+prllppd = Parallelepiped(cnv, *prllppd_config, offset_x=CX, offset_y=CY, offset_z=0)
+prllppd.draw()
 
-# line = Line(cnv, stroke_color=cfg.colors[6])
+line = Line(cnv, stroke_color=cfg.colors[6])
 
 
-# def draw_coords() -> None:
-#     """Draw coords"""
+def draw_coords() -> None:
+    """Draw coords"""
 
-#     line.draw([0, CY], [cfg.width, CY]).draw([CX, 0], [CX, cfg.height])
+    line.draw([0, CY], [cfg.width, CY]).draw([CX, 0], [CX, cfg.height])
 
 
-# draw_coords()
+draw_coords()
 
 
 # prllppd_vertex = np.array([]).reshape(0, 2)
