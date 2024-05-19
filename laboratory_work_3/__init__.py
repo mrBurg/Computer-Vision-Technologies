@@ -40,10 +40,10 @@ prllppd_config = 400, 300, 50  # width, height, length
 
 #     if event == cv.EVENT_RBUTTONUP:
 #         DOT_COUNTER = 0
-#         dot_coords = dot_coords[:4]
+#         dot_coords = dot_coords[:4]q
 
 #     MOUSE_DOWN = (
-#         True
+#         Trueq
 #         if event == cv.EVENT_LBUTTONDOWN
 #         else (False if event == cv.EVENT_LBUTTONUP else MOUSE_DOWN)
 #     )
@@ -51,77 +51,28 @@ prllppd_config = 400, 300, 50  # width, height, length
 #     if event == cv.EVENT_MOUSEMOVE and MOUSE_DOWN:
 #         dot_coords.append([x, y])
 
-prllppd = Parallelepiped(cnv, *prllppd_config, offset_x=CX, offset_y=CY, offset_z=0)
+prllppd = Parallelepiped(
+    cnv,
+    *prllppd_config,
+    offset_x=CX,
+    offset_y=CY,
+    offset_z=0,
+    stroke_width=4,
+    stroke_color=cfg.colors[0],
+    fill_color=cfg.colors[1]
+)
 prllppd.draw()
 
-line = Line(cnv, stroke_color=cfg.colors[6])
+# line = Line(cnv, stroke_color=cfg.colors[6])
 
 
-def draw_coords() -> None:
-    """Draw coords"""
+# def draw_coords() -> None:
+#     """Draw coords"""
 
-    line.draw([0, CY], [cfg.width, CY]).draw([CX, 0], [CX, cfg.height])
-
-
-draw_coords()
+#     line.draw([0, CY], [cfg.width, CY]).draw([CX, 0], [CX, cfg.height])
 
 
-# prllppd_vertex = np.array([]).reshape(0, 2)
-
-# rect = Rectangle(
-#     cnv, prlpd_config[0], prlpd_config[1], offset_x=CX, offset_y=CY, stroke_width=4
-# )
-# rect.draw()
-# prllppd_vertex = np.append(prllppd_vertex, rect.points, axis=0)
-
-# rect.translate(prlpd_config[1] * 0.5, prlpd_config[1] * -0.5)
-# rect.draw()
-# prllppd_vertex = np.append(prllppd_vertex, rect.points, axis=0)
-
-# # print(prllppd_vertex)
-
-# top = np.array([], DType).reshape(0, 2)
-# bottom = np.array([], DType).reshape(0, 2)
-# left = np.array([], DType).reshape(0, 2)
-# right = np.array([], DType).reshape(0, 2)
-
-# for i in range(0, len(prllppd_vertex), 4):
-#     vertices = prllppd_vertex[i : i + 4]
-
-#     top = np.append(top, vertices[0:2], axis=0)
-#     bottom = np.append(bottom, vertices[2:4], axis=0)
-#     left = np.append(left, [vertices[0], vertices[3]], axis=0)
-#     right = np.append(right, vertices[1:3], axis=0)
-
-# # top[-1], top[-2] = top[-2], top[-1].copy()
-# # bottom[-1], bottom[-2] = bottom[-2], bottom[-1].copy()
-# # left[-1], left[-2] = left[-2], left[-1].copy()
-# # right[-1], right[-2] = right[-2], right[-1].copy()
-
-# top = np.concatenate((top[:2], top[-1:], top[-2:-1]))
-# bottom = np.concatenate((bottom[:2], bottom[-1:], bottom[-2:-1]))
-# left = np.concatenate((left[:2], left[-1:], left[-2:-1]))
-# right = np.concatenate((right[:2], right[-1:], right[-2:-1]))
-
-# Polyline(cnv, top).draw(stroke_color=cfg.colors[0], stroke_width=4)
-# Polyline(cnv, bottom).draw(stroke_color=cfg.colors[1], stroke_width=4)
-# Polyline(cnv, left).draw(stroke_color=cfg.colors[2], stroke_width=4)
-# Polyline(cnv, right).draw(stroke_color=cfg.colors[3], stroke_width=4)
-######################################
-
-# Polyline(cnv, prllppd_vertex).draw()
-# cube = Rectangle(cnv, )
-
-
-# for i in range(2):
-#     rect = rect.translate(50, -50).skew_x(45).draw()
-#     prllppd_vertex.extend(rect.points)
-
-# print(prllppd_vertex)
-
-# ANGLE = 15
-
-# rect.rotate(ANGLE).scale(1, 0.2).rotate(-ANGLE / 5).scale(1, 5).draw()
+# draw_coords()
 
 cv.namedWindow(WIN_NAME, cv.WINDOW_AUTOSIZE)
 cv.imshow(WIN_NAME, cnv)

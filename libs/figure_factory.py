@@ -118,8 +118,8 @@ class Figure:
         matrix = np.array(matrix).T
         points = np.array([]).reshape(0, 2)
 
-        for i in self.points:
-            point = np.dot([*i, 1], matrix)
+        for p in self.points:
+            point = np.dot([*p, 1], matrix)
             points = np.append(points, [point[:2]], axis=0)
 
         self.points = points
@@ -613,7 +613,9 @@ def test():
         .add(0, axis_offset / 4, 2, cfg.colors[6])
         .add(axis_offset / 4, axis_offset / 4, 4, cfg.colors[7])
     )
+    print("\033[33m")
     print("Line points", line.line)
+    print("\033[0m")
 
     cv.imshow("Common Canvas", cnv)
     cv.waitKey(0)

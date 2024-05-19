@@ -3,11 +3,11 @@
 # pylint: disable=E1101, W0237, R0913, R0902, C0301
 
 from dataclasses import dataclass, field
-from typing import Union, Tuple
+from typing import Union, Tuple, List, Optional
 import numpy as np
 from utils import Utils
 from config import Config
-from figure_factory import Figure, Rectangle, Canvas, Cell, Point, Points
+from figure_factory import Figure, Rectangle, Canvas, Cell, Point, Points, DType
 
 __version__ = "1.0.0"
 
@@ -30,11 +30,9 @@ class Figure3D(Figure):
     width: float = 0
     height: float = 0
     length: float = 0
-    pivot: Point = field(default_factory=lambda: [0.5, 0.5])
-    stroke_width: Union[float, bool] = False
-    stroke_color: Union[str, bool] = False
-    fill_color: Union[str, bool] = False
+    pivot: Point = field(default_factory=lambda: [0.5, 0.5, 0.5])
     initial_props: Points = None
+    parts: List[List[Points]] = field(default_factory=lambda: [[[]]])
 
     def __init__(
         self,
@@ -126,8 +124,8 @@ class Figure3D(Figure):
         matrix = np.array(matrix).T
         points = np.array([]).reshape(0, 2)
 
-        for i in self.points:
-            point = np.dot([*i, 1], matrix)
+        for p in self.points:
+            point = np.dot([*p, 1], matrix)
             points = np.append(points, [point[:2]], axis=0)
 
         self.points = points
@@ -208,76 +206,87 @@ class Figure3D(Figure):
 
     #     return self
 
-    # def draw(
-    #     self,
-    #     matrix: Matrix = None,
-    #     stroke_width: Optional[Union[int, float, bool]] = False,
-    #     stroke_color: Optional[Union[str | bool]] = False,
-    #     fill_color: Optional[Union[str | bool]] = False,
-    # ) -> "Figure3D":
-    #     """Draw figure"""
+    def draw(
+        self,
+        matrix: Matrix = None,
+        stroke_width: Optional[Union[int, float, bool]] = False,
+        stroke_color: Optional[Union[str | bool]] = False,
+        fill_color: Optional[Union[str | bool]] = False,
+    ) -> "Figure3D":
+        """Draw figure"""
 
-    #     if matrix:
-    #         self._apply_matrix(self.get_translate_matrix(-self.x, -self.y))
-    #         self._apply_matrix(matrix)
-    #         self._apply_matrix(self.get_translate_matrix(self.x, self.y))
-    #         self.x += matrix[0][2]
-    #         self.y += matrix[1][2]
+        if matrix:
+            self._apply_matrix_3d(
+                self.get_translate_matrix_3d(-self.x, -self.y, -self.z)
+            )
+            self._apply_matrix_3d(matrix)
+            self._apply_matrix_3d(self.get_translate_matrix_3d(self.x, self.y, self.z))
+            self.x += matrix[0][3]
+            self.y += matrix[1][3]
+            self.z += matrix[2][3]
 
-    #     stroke_width = self._get_stroke_width(stroke_width)
-    #     stroke_color = self._get_stroke_color(stroke_color)
-    #     fill_color = self._get_fill_color(fill_color)
+        # stroke_width = self._get_stroke_width(stroke_width)
+        # stroke_color = self._get_stroke_color(stroke_color)
+        # fill_color = self._get_fill_color(fill_color)
 
-    #     points = [np.array(self.points, dtype=np.int32)]
+        # print(super().stroke_width, super().stroke_color, super().fill_color, "<<<")
 
-    #     cv.polylines(
-    #         self.cnv,
-    #         points,
-    #         True,
-    #         stroke_color,
-    #         (
-    #             int(round(stroke_width * 2))
-    #             if fill_color and stroke_width
-    #             else stroke_width
-    #         ),
-    #     )
+        for points in self.parts:
+            # print(points)
+            super().__init__(self.cnv, points)
+            super().draw()
+            # Polyline(self.cnv, points).draw()
+        # Polyline(cnv, bottom, **kwargs).draw(stroke_color=cfg.colors[1], stroke_width=4)
+        # Polyline(cnv, top, **kwargs).draw(stroke_color=cfg.colors[2], stroke_width=4)
+        # Polyline(cnv, right, **kwargs).draw(stroke_color=cfg.colors[4], stroke_width=4)
+        # Polyline(cnv, left, **kwargs).draw(stroke_color=cfg.colors[4], stroke_width=4)
+        # Polyline(cnv, front, **kwargs).draw(stroke_color=cfg.colors[3], stroke_width=4)
+        # super().__init__(self.cnv, points)
+        # super().draw(stroke_color="#f0f")
 
-    #     if fill_color:
-    #         cv.fillPoly(self.cnv, points, fill_color)
+        return self
 
-    #     return self
+    def reset(self) -> "Figure3D":
+        """Reset"""
 
-    # def reset(self) -> "Figure3D":
-    #     """Reset"""
+        # Needs TODO: Reset the size when given new
 
-    #     # Needs TODO: Reset the size when given new
+        self.x = self.y = self.z = 0
+        self.stroke_width = 1
+        self.stroke_color = self.fill_color = None
+        self.points = self.initial_props
 
-    #     self.x = self.y = self.z = 0
-    #     self.stroke_width = 1
-    #     self.stroke_color = self.fill_color = None
-    #     self.points = self.initial_props
-
-    #     return self
+        return self
 
 
 @dataclass
 class Parallelepiped(Figure3D):
     """Parallelepiped"""
 
-    def __init__(self, cnv: Canvas, width, height, length, **kwargs) -> None:
+    def __init__(  # pylint: disable=R0914
+        self, cnv: Canvas, width, height, length, **kwargs
+    ) -> None:
         self.cnv = cnv
 
-        prllppd_vertex = np.array([]).reshape(0, 2)
-        z = kwargs.pop("offset_z", None)
+        offset_x = kwargs.get("offset_x", 0)
+        offset_y = kwargs.get("offset_y", 0)
+        _offset_z = kwargs.pop("offset_z", 0)
 
-        rect = Rectangle(cnv, width, height, **kwargs)
-        # rect.draw()
-        prllppd_vertex = np.append(prllppd_vertex, rect.points, axis=0)
+        print(offset_x, offset_y, "<<<")
 
-        rect.translate(length, length)
-        # rect.draw()
-        prllppd_vertex = np.append(prllppd_vertex, rect.points, axis=0)
+        back_side = Rectangle(cnv, width, height, offset_x=offset_x, offset_y=offset_y)
+        front_side = Rectangle(
+            cnv, width, height, offset_x=offset_x, offset_y=offset_y
+        ).translate(length, length)
 
-        self.points = prllppd_vertex
+        back = back_side.points
+        front = front_side.points
+        bottom = np.array([*back[2:4], *np.flip(front[2:4], axis=0)], DType)
+        top = np.array([*back[0:2], *np.flip(front[:2], axis=0)], DType)
+        right = np.array([*back[1:3], *np.flip(front[1:3], axis=0)], DType)
+        left = np.array([back[0], front[0], front[3], back[3]], DType)
+
+        self.parts = np.array([back, front, bottom, top, right, left])
+        self.points = np.array([back, front]).reshape(-1, 2)
 
         super().__init__(self.cnv, self.points, width, height, length, **kwargs)
