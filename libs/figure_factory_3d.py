@@ -5,17 +5,18 @@
 from dataclasses import dataclass, field
 from typing import Union, Tuple, List, Optional
 import numpy as np
+import cv2 as cv
 from utils import Utils
 from config import Config
-from figure_factory import Figure, Rectangle, Canvas, Cell, Point, Points, DType
+from figure_factory import Figure, Rectangle, Canvas, Point, Points
 
 __version__ = "1.0.0"
 
 __all__ = ["Utils", "Config"]
 
 Matrix = Tuple[
-    Tuple[Cell, Cell, Cell, Cell],
-    Tuple[Cell, Cell, Cell, Cell],
+    Tuple[float, float, float, float],
+    Tuple[float, float, float, float],
     Tuple[int, int, int, int],
 ]
 
@@ -48,10 +49,11 @@ class Figure3D(Figure):
         self.height = height
         self.length = length
         self.initial_props = self.points = points
-        self.pivot = [0.5, 0.5]
-        offset_x = getattr(kwargs, "offset_x", self.x)
-        offset_y = getattr(kwargs, "offset_y", self.y)
+        self.pivot = [0.5, 0.5, 0.5]
+        offset_x = kwargs.get("offset_x", self.x)
+        offset_y = kwargs.get("offset_y", self.y)
         self.z = kwargs.pop("offset_z", self.z)
+        self.parts = [[[]]]
 
         self.translate(offset_x, offset_y)
 
@@ -120,12 +122,28 @@ class Figure3D(Figure):
     #         (0, 0, 1),
     #     ]
 
+    def _make_parts(self) -> None:
+        print(self.points)
+
+        back = self.points[: int(len(self.points) / 2)]
+        front = self.points[int(len(self.points) / 2) :]
+        bottom = np.array([*back[2:4], *np.flip(front[2:4], axis=0)])
+        top = np.array([*back[0:2], *np.flip(front[:2], axis=0)])
+        right = np.array([*back[1:3], *np.flip(front[1:3], axis=0)])
+        left = np.array([back[0], front[0], front[3], back[3]])
+
+        self.parts = np.array([back, bottom, right, left, top, front])
+
     def _apply_matrix_3d(self, matrix: Matrix) -> None:
         matrix = np.array(matrix).T
         points = np.array([]).reshape(0, 2)
 
+        # print(self.points)
+        # print(matrix)
+        # print(points)
+
         for p in self.points:
-            point = np.dot([*p, 1], matrix)
+            point = np.dot([*p, 0, 1], matrix)
             points = np.append(points, [point[:2]], axis=0)
 
         self.points = points
@@ -145,15 +163,15 @@ class Figure3D(Figure):
 
     #     return self
 
-    # def translate(self, tx: float, ty: float = None) -> "Figure3D":
-    #     """Translate"""
+    def translate_3d(self, tx: float, ty: float, tz: float) -> "Figure3D":
+        """Translate"""
 
-    #     ty = tx if ty is None else ty
-    #     self.x += tx
-    #     self.y += ty
-    #     self._apply_matrix(Figure3D.get_translate_matrix_3d(tx, ty))
+        self.x += tx
+        self.y += ty
+        self.z += tz
+        # self._apply_matrix_3d(Figure3D.get_translate_matrix_3d(tx, ty, tz))
 
-    #     return self
+        return self
 
     # def scale(self, sw: float, sh: float = None) -> "Figure3D":
     #     """Scale"""
@@ -167,14 +185,14 @@ class Figure3D(Figure):
 
     #     return self
 
-    # def rotate(self, deg: float) -> "Figure3D":
-    #     """Rotate"""
+    def rotate_x_3d(self, deg: float) -> "Figure3D":
+        """Rotate"""
 
-    #     self._apply_matrix(Figure3D.get_translate_matrix_3d(-self.x, -self.y))
-    #     self._apply_matrix(Figure3D.get_rotate_matrix_3d(Utils.deg_to_rads(deg)))
-    #     self._apply_matrix(Figure3D.get_translate_matrix_3d(self.x, self.y))
+        self._apply_matrix_3d(Figure3D.get_translate_matrix_3d(-self.x, -self.y, 0))
+        self._apply_matrix_3d(Figure3D.get_rotate_x_matrix_3d(Utils.deg_to_rads(deg)))
+        self._apply_matrix_3d(Figure3D.get_translate_matrix_3d(self.x, self.y, 0))
 
-    #     return self
+        return self
 
     # def skew_x(self, deg: float) -> "Figure3D":
     #     """skew X"""
@@ -209,9 +227,9 @@ class Figure3D(Figure):
     def draw(
         self,
         matrix: Matrix = None,
-        stroke_width: Optional[Union[int, float, bool]] = False,
-        stroke_color: Optional[Union[str | bool]] = False,
-        fill_color: Optional[Union[str | bool]] = False,
+        _stroke_width: Optional[Union[int, float, bool]] = False,
+        _stroke_color: Optional[Union[str | bool]] = False,
+        _fill_color: Optional[Union[str | bool]] = False,
     ) -> "Figure3D":
         """Draw figure"""
 
@@ -225,24 +243,22 @@ class Figure3D(Figure):
             self.y += matrix[1][3]
             self.z += matrix[2][3]
 
-        # stroke_width = self._get_stroke_width(stroke_width)
-        # stroke_color = self._get_stroke_color(stroke_color)
-        # fill_color = self._get_fill_color(fill_color)
+        self._make_parts()
 
-        # print(super().stroke_width, super().stroke_color, super().fill_color, "<<<")
+        print(self.parts)
+        print("-" * 20)
 
         for points in self.parts:
-            # print(points)
-            super().__init__(self.cnv, points)
+            super().__init__(
+                self.cnv,
+                points,
+                self.width,
+                self.height,
+                self.stroke_width,
+                self.stroke_color,
+                self.fill_color,
+            )
             super().draw()
-            # Polyline(self.cnv, points).draw()
-        # Polyline(cnv, bottom, **kwargs).draw(stroke_color=cfg.colors[1], stroke_width=4)
-        # Polyline(cnv, top, **kwargs).draw(stroke_color=cfg.colors[2], stroke_width=4)
-        # Polyline(cnv, right, **kwargs).draw(stroke_color=cfg.colors[4], stroke_width=4)
-        # Polyline(cnv, left, **kwargs).draw(stroke_color=cfg.colors[4], stroke_width=4)
-        # Polyline(cnv, front, **kwargs).draw(stroke_color=cfg.colors[3], stroke_width=4)
-        # super().__init__(self.cnv, points)
-        # super().draw(stroke_color="#f0f")
 
         return self
 
@@ -268,25 +284,54 @@ class Parallelepiped(Figure3D):
     ) -> None:
         self.cnv = cnv
 
-        offset_x = kwargs.get("offset_x", 0)
-        offset_y = kwargs.get("offset_y", 0)
-        _offset_z = kwargs.pop("offset_z", 0)
+        offset_x = kwargs.pop("offset_x", 0)
+        offset_y = kwargs.pop("offset_y", 0)
+        offset_z = kwargs.pop("offset_z", 0)
 
-        print(offset_x, offset_y, "<<<")
-
-        back_side = Rectangle(cnv, width, height, offset_x=offset_x, offset_y=offset_y)
-        front_side = Rectangle(
+        back_side = Rectangle(
             cnv, width, height, offset_x=offset_x, offset_y=offset_y
-        ).translate(length, length)
+        ).draw()
+        front_side = (
+            Rectangle(cnv, width, height, offset_x=offset_x, offset_y=offset_y)
+            .translate(length, length)
+            .draw()
+        )
 
-        back = back_side.points
-        front = front_side.points
-        bottom = np.array([*back[2:4], *np.flip(front[2:4], axis=0)], DType)
-        top = np.array([*back[0:2], *np.flip(front[:2], axis=0)], DType)
-        right = np.array([*back[1:3], *np.flip(front[1:3], axis=0)], DType)
-        left = np.array([back[0], front[0], front[3], back[3]], DType)
-
-        self.parts = np.array([back, front, bottom, top, right, left])
-        self.points = np.array([back, front]).reshape(-1, 2)
+        self.points = np.array([back_side.points, front_side.points]).reshape(-1, 2)
+        self.initial_coords = (offset_x, offset_y, offset_z)
 
         super().__init__(self.cnv, self.points, width, height, length, **kwargs)
+
+
+def test():
+    """Test function"""
+
+    cfg = Config()
+
+    cnv = np.full(cfg.cnv_props, 255, dtype=np.uint8)
+
+    prllppd_config = 200, 100, 50
+    cx = cfg.width / 2
+    cy = cfg.height / 2
+
+    cfg.grid(cnv, color=Utils.hex_to_rgba(cfg.colors[15]))
+
+    prllppd = Parallelepiped(
+        cnv,
+        *prllppd_config,
+        offset_x=cx,
+        offset_y=cy,
+        offset_z=prllppd_config[2],
+        stroke_width=2,
+        stroke_color=cfg.colors[0],
+        # fill_color=cfg.colors[1],
+    )
+    prllppd.draw()
+
+    cv.imshow("Common Canvas", cnv)
+    cv.waitKey(0)
+    cv.destroyAllWindows()
+
+
+if __name__ == "__main__":
+    test()

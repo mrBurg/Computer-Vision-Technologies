@@ -9,20 +9,17 @@ import cv2 as cv
 from utils import Utils, RGB
 from config import Config
 
-__version__ = "3.0.0"
+__version__ = "3.1.0"
 
 __all__ = []
 
-NDArray = np.ndarray
-DType = np.float16  # np.dtype([(np.int, np.int)])
-Cell = Union[int, float]
 Matrix = Tuple[
-    Tuple[Cell, Cell, Cell],
-    Tuple[Cell, Cell, Cell],
+    Tuple[float, float, float],
+    Tuple[float, float, float],
     Tuple[int, int, int],
 ]
 Point = Tuple[float, float]
-Points = NDArray[Point, DType]
+Points = np.ndarray[Point]
 Canvas = List[Tuple[int, int, int, Union[int, None]]]
 
 
@@ -46,9 +43,7 @@ class Figure:
         points: Points,
         width: float = width,
         height: float = height,
-        # **kwargs,
-        offset_x: float = x,
-        offset_y: float = y,
+        # **kwargs
         stroke_width: float = stroke_width,
         stroke_color: str = stroke_color,
         fill_color: str = fill_color,
@@ -61,8 +56,6 @@ class Figure:
         self.fill_color = fill_color
         self.initial_props = self.points = points
         self.pivot = [0.5, 0.5]
-
-        self.translate(offset_x, offset_y)
 
     @staticmethod
     def get_translate_matrix(tx: float, ty: float) -> Matrix:
@@ -353,7 +346,7 @@ class Figure:
 
         # Needs TODO: Reset the size when given new
 
-        self.x = self.y = 0
+        self.x, self.y = self.initial_coords
         self.stroke_width = 1
         self.stroke_color = self.fill_color = None
         self.points = self.initial_props
@@ -377,6 +370,8 @@ class PolyOval(Figure):
         start: float = start,
         end: float = end,
         quality: float = quality,
+        offset_x: float = 0,
+        offset_y: float = 0,
         **kwargs,
     ) -> None:
         self.start = start
@@ -391,9 +386,11 @@ class PolyOval(Figure):
                 for degree in range(
                     self.start, self.end, round(20 * (1 - self.quality) + self.quality)
                 )
-            ],
-            dtype=DType,
+            ]
         )
+        self.initial_coords = (offset_x, offset_y)
+
+        self.translate(*self.initial_coords)
 
         super().__init__(cnv, self.points, width, height, **kwargs)
 
@@ -439,7 +436,15 @@ class Oval(PolyOval):
 class Rectangle(Figure):
     """Rectangle"""
 
-    def __init__(self, cnv: Canvas, width: float, height: float, **kwargs) -> None:
+    def __init__(
+        self,
+        cnv: Canvas,
+        width: float,
+        height: float,
+        offset_x: float = 0,
+        offset_y: float = 0,
+        **kwargs,
+    ) -> None:
         self.cnv = cnv
 
         p1 = (width / -2, height / -2)
@@ -447,7 +452,10 @@ class Rectangle(Figure):
         p3 = (p2[0], p1[1] + height)
         p4 = (p1[0], p3[1])
 
-        self.points = np.array([p1, p2, p3, p4], DType)
+        self.points = np.array([p1, p2, p3, p4])
+        self.initial_coords = (offset_x, offset_y)
+
+        self.translate(*self.initial_coords)
 
         super().__init__(self.cnv, self.points, width, height, **kwargs)
 
@@ -456,9 +464,19 @@ class Rectangle(Figure):
 class Polyline(Figure):
     """Polyline"""
 
-    def __init__(self, cnv: Canvas, points: Points, **kwargs) -> None:
+    def __init__(
+        self,
+        cnv: Canvas,
+        points: Points,
+        offset_x: float = 0,
+        offset_y: float = 0,
+        **kwargs,
+    ) -> None:
         self.cnv = cnv
-        self.points = np.array(points, DType)
+        self.points = np.array(points)
+        self.initial_coords = (offset_x, offset_y)
+
+        self.translate(*self.initial_coords)
 
         super().__init__(self.cnv, self.points, **kwargs)
 
@@ -471,9 +489,7 @@ class Line(Figure):
 
     def __init__(self, cnv: Canvas, point: Optional[Point] = None, **kwargs) -> None:
         self.cnv = cnv
-        self.line = self.points = np.array(
-            [self.point if point is None else point], DType
-        )
+        self.line = self.points = np.array([self.point if point is None else point])
 
         super().__init__(self.cnv, self.points, **kwargs)
 
@@ -487,7 +503,7 @@ class Line(Figure):
         """Draw line"""
 
         self.line = [end_point]
-        self.points = np.array([start_point, end_point], DType)
+        self.points = np.array([start_point, end_point])
         self.stroke_width = stroke_width if stroke_width else self.stroke_width
         self.stroke_color = stroke_color if stroke_color else self.stroke_color
 
@@ -507,7 +523,7 @@ class Line(Figure):
         p2 = [p1[0] + x, p1[1] + y]
 
         self.line = np.append(self.line, [p2], axis=0)
-        self.points = np.array([p1, p2], DType)
+        self.points = np.array([p1, p2])
 
         super().draw(None, self.stroke_width, self.stroke_color)
 
@@ -582,7 +598,7 @@ def test():
         )
         pivot.move(fig.x, fig.y).draw()
         # 7
-        fig.reset().translate(150, 650).draw()
+        fig.reset().translate(0, 500).draw()
         pivot.move(fig.x, fig.y).draw()
         # 8
         fig.set_pivot(0.25, 0.25).translate(250, 0).scale(0.5, 1).rotate(

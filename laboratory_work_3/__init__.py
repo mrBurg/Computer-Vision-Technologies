@@ -31,14 +31,14 @@ CX = cfg.width / 2
 CY = cfg.height / 2
 BG_COLOR = Utils.hex_to_rgba(cfg.colors[12])
 
-prllppd_config = 400, 300, 50  # width, height, length
+prllppd_config = 200, 100, 50  # width, height, length
 
 # def mouse_callback(event, x, y, _flags, _params):
 #     """Mouse callback"""
 
 #     global MOUSE_DOWN, DOT_COUNTER, dot_coords
 
-#     if event == cv.EVENT_RBUTTONUP:
+#     if event == cv.EVENT_RBUTTONUP:q
 #         DOT_COUNTER = 0
 #         dot_coords = dot_coords[:4]q
 
@@ -54,25 +54,28 @@ prllppd_config = 400, 300, 50  # width, height, length
 prllppd = Parallelepiped(
     cnv,
     *prllppd_config,
-    offset_x=CX,
-    offset_y=CY,
-    offset_z=0,
-    stroke_width=4,
+    offset_x=prllppd_config[0],
+    offset_y=prllppd_config[1],
+    offset_z=prllppd_config[2],
+    stroke_width=2,
     stroke_color=cfg.colors[0],
-    fill_color=cfg.colors[1]
+    # fill_color=cfg.colors[1],
 )
-prllppd.draw()
+prllppd.draw().draw()
+# prllppd.translate_3d(250, 0, 0).draw()
+# prllppd.translate_3d(200, 200, 0).rotate_x_3d(45).draw()
+# print(prllppd)
 
-# line = Line(cnv, stroke_color=cfg.colors[6])
-
-
-# def draw_coords() -> None:
-#     """Draw coords"""
-
-#     line.draw([0, CY], [cfg.width, CY]).draw([CX, 0], [CX, cfg.height])
+line = Line(cnv, stroke_color=cfg.colors[6])
 
 
-# draw_coords()
+def draw_coords() -> None:
+    """Draw coords"""
+
+    line.draw([0, CY], [cfg.width, CY]).draw([CX, 0], [CX, cfg.height])
+
+
+draw_coords()
 
 cv.namedWindow(WIN_NAME, cv.WINDOW_AUTOSIZE)
 cv.imshow(WIN_NAME, cnv)

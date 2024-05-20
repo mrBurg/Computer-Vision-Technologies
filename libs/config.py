@@ -69,8 +69,7 @@ class Config:
         colors: Optional[List[str]] = None,  # Replaces default colors
         add_colors: Optional[List[str]] = None,  # Adds a set to the default colors
     ) -> None:
-        self.width = self.default_cnv_props[1]
-        self.height = self.default_cnv_props[0]
+        self.height, self.width, _ = self.default_cnv_props
         self.depth = max(1, min(depth if depth else self.default_cnv_props[2], 4))
 
         if colors:
@@ -84,13 +83,11 @@ class Config:
             self.cnv_props = (self.height, self.width, self.depth)
 
         elif len(props) == 2:
-            self.width = props[0]
-            self.height = props[1]
+            self.width, self.height = props
             self.cnv_props = (self.height, self.width, self.depth)
 
         elif len(props) == 3:
-            self.width = props[0]
-            self.height = props[1]
+            self.width, self.height = props
             self.depth = max(1, min(depth if depth else props[2], 4))
             self.cnv_props = (self.height, self.width, self.depth)
         else:
@@ -100,7 +97,7 @@ class Config:
         self,
         cnv,
         size=50,
-        color: Tuple[np.int8, np.int8, np.int8] = (0, 0, 0),
+        color: Tuple[int, int, int] = (0, 0, 0),
         stroke_width: int = 1,
     ) -> None:
         """Grid"""
