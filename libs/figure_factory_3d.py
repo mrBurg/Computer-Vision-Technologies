@@ -1,28 +1,32 @@
 """Figure Factory 3D"""
 
-# pylint: disable=E1101, W0237, R0913, R0902, C0301
+# pylint: disable=E1101, W0237, R0913, R0902, C0301, R0913
 
-from dataclasses import dataclass, field
-from typing import Union, Tuple, List, Optional
+from dataclasses import dataclass
+from typing import Union, Tuple, List
 import numpy as np
 import cv2 as cv
 from utils import Utils
 from config import Config
-from figure_factory import Figure, Rectangle, Canvas, Point, Points
+from figure_factory import Rectangle, Polyline
 
 __version__ = "1.0.0"
 
-__all__ = ["Utils", "Config"]
+__all__ = []
 
 Matrix = Tuple[
-    Tuple[float, float, float, float],
-    Tuple[float, float, float, float],
+    Tuple[float, float, float, int],
+    Tuple[float, float, float, int],
+    Tuple[float, float, float, int],
     Tuple[int, int, int, int],
 ]
+Point = Tuple[float, float]
+Points = np.ndarray[Point]
+Canvas = List[Tuple[int, int, int, Union[int, None]]]
 
 
 @dataclass
-class Figure3D(Figure):
+class Figure3D:
     """Figure3D"""
 
     x: float = 0
@@ -31,9 +35,11 @@ class Figure3D(Figure):
     width: float = 0
     height: float = 0
     length: float = 0
-    pivot: Point = field(default_factory=lambda: [0.5, 0.5, 0.5])
+    pivot: Point = None
+    stroke_width: Union[float, bool] = False
+    stroke_color: Union[str, bool] = False
+    fill_color: Union[str, bool] = False
     initial_props: Points = None
-    parts: List[List[Points]] = field(default_factory=lambda: [[[]]])
 
     def __init__(
         self,
@@ -42,31 +48,29 @@ class Figure3D(Figure):
         width: float = width,
         height: float = height,
         length: float = length,
-        **kwargs
+        # **kwargs
+        stroke_width: float = stroke_width,
+        stroke_color: str = stroke_color,
+        fill_color: str = fill_color,
     ) -> None:
         self.cnv = cnv
         self.width = width
         self.height = height
         self.length = length
+        self.stroke_width = stroke_width
+        self.stroke_color = stroke_color
+        self.fill_color = fill_color
         self.initial_props = self.points = points
-        self.pivot = [0.5, 0.5, 0.5]
-        offset_x = kwargs.get("offset_x", self.x)
-        offset_y = kwargs.get("offset_y", self.y)
-        self.z = kwargs.pop("offset_z", self.z)
-        self.parts = [[[]]]
-
-        self.translate(offset_x, offset_y)
-
-        super().__init__(self.cnv, self.points, self.width, self.height, **kwargs)
+        self.parts = []
 
     @staticmethod
-    def get_projection_matrix_3d() -> Matrix:
+    def get_projection_matrix_3d(length: float) -> Matrix:
         """Returns translate matrix"""
 
         return [
             (1, 0, 0, 0),
             (0, 1, 0, 0),
-            (0, 0, 0, 0),
+            (0, 0, length, 0),
             (0, 0, 0, 1),
         ]
 
@@ -75,93 +79,116 @@ class Figure3D(Figure):
         """Returns translate matrix"""
 
         return [
-            [1, 0, 0, tx],
-            [0, 1, 0, ty],
-            [0, 0, 1, tz],
-            [1, 0, 0, 1],
+            (1, 0, 0, tx),
+            (0, 1, 0, ty),
+            (0, 0, 1, tz),
+            (1, 0, 0, 1),
         ]
-
-    # @staticmethod
-    # def get_scale_matrix(sw: float, sh: float) -> Matrix:
-    #     """Returns scale matrix"""
-
-    #     return [
-    #         (sw, 0, 0),
-    #         (0, sh, 0),
-    #         (0, 0, 1),
-    #     ]
 
     @staticmethod
-    def get_rotate_x_matrix_3d(rad: float) -> Matrix:
-        """Returns rotate matrix"""
+    def get_scale_matrix_3d(sw: float, sh: float, sl: float) -> Matrix:
+        """Returns scale matrix"""
 
         return [
-            [1, 0, 0, 0],
-            [0, np.cos(rad), np.sin(rad), 0],
-            [0, -np.sin(rad), np.cos(rad), 0],
-            [0, 0, 0, 1],
+            (sw, 0, 0, 0),
+            (0, sh, 0, 0),
+            (0, 0, sl, 0),
+            (0, 0, 0, 1),
         ]
 
-    # @staticmethod
-    # def get_skew_x_matrix(deg: float) -> Matrix:
-    #     """Returns skewX matrix"""
+    @staticmethod
+    def get_rotate_matrix_3d(rx: float, ry: float, rz: float) -> Matrix:
+        """Returns rotate matrix"""
 
-    #     return [
-    #         (1, np.tan(deg), 0),
-    #         (0, 1, 0),
-    #         (0, 0, 1),
-    #     ]
+        rx = np.array(
+            [
+                (1, 0, 0, 0),
+                (0, np.cos(rx), -np.sin(rx), 0),
+                (0, np.sin(rx), np.cos(rx), 0),
+                (0, 0, 0, 1),
+            ]
+        )
 
-    # @staticmethod
-    # def get_skew_y_matrix(deg: float) -> Matrix:
-    #     """Returns skewY matrix"""
+        ry = np.array(
+            [
+                (np.cos(ry), 0, np.sin(ry), 0),
+                (0, 1, 0, 0),
+                (-np.sin(ry), 0, np.cos(ry), 0),
+                (0, 0, 0, 1),
+            ]
+        )
 
-    #     return [
-    #         (1, 0, 0),
-    #         (np.tan(deg), 1, 0),
-    #         (0, 0, 1),
-    #     ]
+        rz = np.array(
+            [
+                (np.cos(rz), -np.sin(rz), 0, 0),
+                (np.sin(rz), np.cos(rz), 0, 0),
+                (0, 0, 1, 0),
+                (0, 0, 0, 1),
+            ]
+        )
 
-    def _make_parts(self) -> None:
-        print(self.points)
+        return np.dot(np.dot(rz, ry), rx)
 
-        back = self.points[: int(len(self.points) / 2)]
-        front = self.points[int(len(self.points) / 2) :]
-        bottom = np.array([*back[2:4], *np.flip(front[2:4], axis=0)])
-        top = np.array([*back[0:2], *np.flip(front[:2], axis=0)])
-        right = np.array([*back[1:3], *np.flip(front[1:3], axis=0)])
-        left = np.array([back[0], front[0], front[3], back[3]])
+    @staticmethod
+    def get_skew_matrix_3d(sx: float, sy: float, sz: float) -> Matrix:
+        """Returns rotate matrix"""
 
-        self.parts = np.array([back, bottom, right, left, top, front])
+        sx = np.array(
+            [
+                (1, np.tan(sx), 0, 0),
+                (0, 1, 0, 0),
+                (0, 0, 1, 0),
+                (0, 0, 0, 1),
+            ]
+        )
+
+        sy = np.array(
+            [
+                (1, 0, 0, 0),
+                (np.tan(sy), 1, 0, 0),
+                (0, 0, 0, 0),
+                (0, 0, 0, 1),
+            ]
+        )
+
+        sz = np.array(
+            [
+                (1, 0, np.tan(sz), 0),
+                (0, 1, 0, 0),
+                (0, 0, 1, 0),
+                (0, 0, 0, 1),
+            ]
+        )
+
+        return np.dot(np.dot(sx, sy), sz)
+
+    def _apply_projection_matrix_3d(self, points, matrix: Matrix) -> None:
+        matrix = np.array(matrix).T
+        points = np.hstack((points, np.ones((points.shape[0], 2))))
+        points = np.dot(points, matrix)
+        points = np.delete(points, -1, axis=1)
+
+        return points
 
     def _apply_matrix_3d(self, matrix: Matrix) -> None:
         matrix = np.array(matrix).T
-        points = np.array([]).reshape(0, 2)
-
-        # print(self.points)
-        # print(matrix)
-        # print(points)
-
-        for p in self.points:
-            point = np.dot([*p, 0, 1], matrix)
-            points = np.append(points, [point[:2]], axis=0)
+        points = np.hstack((self.points, np.ones((self.points.shape[0], 1))))
+        points = np.dot(points, matrix)
+        points = np.delete(points, -1, axis=1)
 
         self.points = points
 
-    # def set_pivot_3d(self, px: float, py: float = None, pz: float = None) -> "Figure3D":
-    #     """Set Pivot"""
+    def _make_parallelepiped_parts(self) -> None:
+        """Make parallelepiped parts"""
 
-    #     py = px if py is None else py
-    #     self.pivot = [px, py]
+        back = self.points[: int(len(self.points) / 2)]
+        front = self.points[int(len(self.points) / 2) :]
+        bottom = [*back[2:4], *np.flip(front[2:4], axis=0)]
+        top = [*back[0:2], *np.flip(front[:2], axis=0)]
+        right = [*back[1:3], *np.flip(front[1:3], axis=0)]
+        left = [back[0], front[0], front[3], back[3]]
 
-    #     self._apply_matrix(
-    #         Figure3D.get_translate_matrix(
-    #             self.width * 0.5 - self.pivot[0] * self.width,
-    #             self.height * 0.5 - self.pivot[1] * self.height,
-    #         )
-    #     )
-
-    #     return self
+        self.parts = np.array([back, bottom, left, right, front, top])
 
     def translate_3d(self, tx: float, ty: float, tz: float) -> "Figure3D":
         """Translate"""
@@ -169,108 +196,82 @@ class Figure3D(Figure):
         self.x += tx
         self.y += ty
         self.z += tz
-        # self._apply_matrix_3d(Figure3D.get_translate_matrix_3d(tx, ty, tz))
+
+        self._apply_matrix_3d(Figure3D.get_translate_matrix_3d(tx, ty, tz))
+
+        self._make_parallelepiped_parts()
 
         return self
 
-    # def scale(self, sw: float, sh: float = None) -> "Figure3D":
-    #     """Scale"""
+    def scale_3d(self, sw: float, sh: float, sl: float) -> "Figure3D":
+        """Scale"""
 
-    #     self._apply_matrix(Figure3D.get_translate_matrix_3d(-self.x, -self.y))
+        self._apply_matrix_3d(
+            Figure3D.get_translate_matrix_3d(-self.x, -self.y, -self.z)
+        )
+        self._apply_matrix_3d(
+            Figure3D.get_scale_matrix_3d(
+                Utils.deg_to_rads(sw),
+                Utils.deg_to_rads(sh),
+                Utils.deg_to_rads(sl),
+            )
+        )
+        self._apply_matrix_3d(Figure3D.get_translate_matrix_3d(self.x, self.y, self.z))
 
-    #     sh = sw if sh is None else sh
-    #     self._apply_matrix(Figure3D.get_scale_matrix(sw, sh))
+        self._make_parallelepiped_parts()
 
-    #     self._apply_matrix(Figure3D.get_translate_matrix_3d(self.x, self.y))
+        return self
 
-    #     return self
-
-    def rotate_x_3d(self, deg: float) -> "Figure3D":
+    def rotate_3d(self, rx: float, ry: float, rz: float) -> "Figure3D":
         """Rotate"""
 
-        self._apply_matrix_3d(Figure3D.get_translate_matrix_3d(-self.x, -self.y, 0))
-        self._apply_matrix_3d(Figure3D.get_rotate_x_matrix_3d(Utils.deg_to_rads(deg)))
-        self._apply_matrix_3d(Figure3D.get_translate_matrix_3d(self.x, self.y, 0))
+        self._apply_matrix_3d(
+            Figure3D.get_translate_matrix_3d(-self.x, -self.y, -self.z)
+        )
+        self._apply_matrix_3d(
+            Figure3D.get_rotate_matrix_3d(
+                Utils.deg_to_rads(rx),
+                Utils.deg_to_rads(ry),
+                Utils.deg_to_rads(rz),
+            )
+        )
+        self._apply_matrix_3d(Figure3D.get_translate_matrix_3d(self.x, self.y, self.z))
+
+        self._make_parallelepiped_parts()
 
         return self
 
-    # def skew_x(self, deg: float) -> "Figure3D":
-    #     """skew X"""
+    def skew_3d(self, sx: float, sy: float, sz: float) -> "Figure3D":
+        """Skew"""
 
-    #     self._apply_matrix(Figure3D.get_translate_matrix_3d(-self.x, -self.y))
-    #     self._apply_matrix(Figure3D.get_skew_x_matrix_3d(Utils.deg_to_rads(deg)))
-    #     self._apply_matrix(Figure3D.get_translate_matrix_3d(self.x, self.y))
+        self._apply_matrix_3d(
+            Figure3D.get_translate_matrix_3d(-self.x, -self.y, -self.z)
+        )
+        self._apply_matrix_3d(
+            Figure3D.get_skew_matrix_3d(
+                Utils.deg_to_rads(sx),
+                Utils.deg_to_rads(sy),
+                Utils.deg_to_rads(sz),
+            )
+        )
+        self._apply_matrix_3d(Figure3D.get_translate_matrix_3d(self.x, self.y, self.z))
 
-    #     return self
+        self._make_parallelepiped_parts()
 
-    # def skew_y(self, deg: float) -> "Figure3D":
-    #     """skew Y"""
+        return self
 
-    #     self._apply_matrix(Figure3D.get_translate_matrix_3d(-self.x, -self.y))
-    #     self._apply_matrix(Figure3D.get_skew_y_matrix_3d(Utils.deg_to_rads(deg)))
-    #     self._apply_matrix(Figure3D.get_translate_matrix_3d(self.x, self.y))
-
-    #     return self
-
-    # def move(self, mx: float, my: float = None) -> "Figure3D":
-    #     """Move"""
-
-    #     self._apply_matrix(Figure3D.get_translate_matrix_3d(-self.x, -self.y))
-
-    #     my = mx if my is None else my
-    #     self.x = mx
-    #     self.y = my
-    #     self._apply_matrix(Figure3D.get_translate_matrix_3d(self.x, self.y))
-
-    #     return self
-
-    def draw(
-        self,
-        matrix: Matrix = None,
-        _stroke_width: Optional[Union[int, float, bool]] = False,
-        _stroke_color: Optional[Union[str | bool]] = False,
-        _fill_color: Optional[Union[str | bool]] = False,
-    ) -> "Figure3D":
+    def draw(self) -> "Figure3D":
         """Draw figure"""
 
-        if matrix:
-            self._apply_matrix_3d(
-                self.get_translate_matrix_3d(-self.x, -self.y, -self.z)
-            )
-            self._apply_matrix_3d(matrix)
-            self._apply_matrix_3d(self.get_translate_matrix_3d(self.x, self.y, self.z))
-            self.x += matrix[0][3]
-            self.y += matrix[1][3]
-            self.z += matrix[2][3]
-
-        self._make_parts()
-
-        print(self.parts)
-        print("-" * 20)
-
         for points in self.parts:
-            super().__init__(
+            points = np.delete(points, -1, axis=1)
+
+            Polyline(
                 self.cnv,
                 points,
-                self.width,
-                self.height,
-                self.stroke_width,
-                self.stroke_color,
-                self.fill_color,
-            )
-            super().draw()
-
-        return self
-
-    def reset(self) -> "Figure3D":
-        """Reset"""
-
-        # Needs TODO: Reset the size when given new
-
-        self.x = self.y = self.z = 0
-        self.stroke_width = 1
-        self.stroke_color = self.fill_color = None
-        self.points = self.initial_props
+                stroke_width=self.stroke_width,
+                stroke_color=self.stroke_color,
+            ).draw()
 
         return self
 
@@ -282,25 +283,24 @@ class Parallelepiped(Figure3D):
     def __init__(  # pylint: disable=R0914
         self, cnv: Canvas, width, height, length, **kwargs
     ) -> None:
-        self.cnv = cnv
+        Rectangle(cnv, width, height)
 
-        offset_x = kwargs.pop("offset_x", 0)
-        offset_y = kwargs.pop("offset_y", 0)
-        offset_z = kwargs.pop("offset_z", 0)
+        back = Rectangle(cnv, width, height)
+        front = Rectangle(cnv, width, height)
 
-        back_side = Rectangle(
-            cnv, width, height, offset_x=offset_x, offset_y=offset_y
-        ).draw()
-        front_side = (
-            Rectangle(cnv, width, height, offset_x=offset_x, offset_y=offset_y)
-            .translate(length, length)
-            .draw()
+        bsp = self._apply_projection_matrix_3d(
+            back.points, Figure3D.get_projection_matrix_3d(-length * 0.5)
         )
 
-        self.points = np.array([back_side.points, front_side.points]).reshape(-1, 2)
-        self.initial_coords = (offset_x, offset_y, offset_z)
+        fsp = self._apply_projection_matrix_3d(
+            front.points, Figure3D.get_projection_matrix_3d(length * 0.5)
+        )
 
-        super().__init__(self.cnv, self.points, width, height, length, **kwargs)
+        points = np.concatenate((bsp, fsp), axis=0)
+
+        super().__init__(cnv, points, width, height, length, **kwargs)
+
+        self._make_parallelepiped_parts()
 
 
 def test():
@@ -310,25 +310,21 @@ def test():
 
     cnv = np.full(cfg.cnv_props, 255, dtype=np.uint8)
 
-    prllppd_config = 200, 100, 50
+    prllppd_config = 400, 350, 250  # width, height, length
     cx = cfg.width / 2
     cy = cfg.height / 2
+    win_name = "Common Canvas"
 
-    cfg.grid(cnv, color=Utils.hex_to_rgba(cfg.colors[15]))
-
-    prllppd = Parallelepiped(
-        cnv,
-        *prllppd_config,
-        offset_x=cx,
-        offset_y=cy,
-        offset_z=prllppd_config[2],
-        stroke_width=2,
-        stroke_color=cfg.colors[0],
-        # fill_color=cfg.colors[1],
+    cfg.grid(cnv, color=Utils.hex_to_rgba(cfg.colors[15]), position=(int(cx), int(cy)))
+    prllppd = (
+        Parallelepiped(cnv, *prllppd_config, stroke_width=2, stroke_color=cfg.colors[0])
+        .translate_3d(cx, cy, prllppd_config[2] / 2)
+        .rotate_3d(45, 45, 45)
     )
     prllppd.draw()
 
-    cv.imshow("Common Canvas", cnv)
+    cv.namedWindow(win_name, cv.WINDOW_AUTOSIZE)
+    cv.imshow(win_name, cnv)
     cv.waitKey(0)
     cv.destroyAllWindows()
 

@@ -1,6 +1,6 @@
 """Figure Factory"""
 
-# pylint: disable=E1101, W0237, R0913, R0902, C0301
+# pylint: disable=E1101, W0237, R0913, R0902, R0911, R1705, C0301
 
 from dataclasses import dataclass, field
 from typing import Union, List, Tuple, Optional
@@ -109,11 +109,9 @@ class Figure:
 
     def _apply_matrix(self, matrix: Matrix) -> None:
         matrix = np.array(matrix).T
-        points = np.array([]).reshape(0, 2)
-
-        for p in self.points:
-            point = np.dot([*p, 1], matrix)
-            points = np.append(points, [point[:2]], axis=0)
+        points = np.hstack((self.points, np.ones((self.points.shape[0], 1))))
+        points = np.dot(points, matrix)
+        points = np.delete(points, -1, axis=1)  # points2[:, [0, 1]]
 
         self.points = points
 
@@ -123,7 +121,7 @@ class Figure:
         """Get weight"""
 
         if isinstance(weight, bool):
-            if self.stroke_width:  # pylint: disable=R1705
+            if self.stroke_width:
                 return int(round(self.stroke_width))
 
             elif self.stroke_width is None:
@@ -147,13 +145,11 @@ class Figure:
 
         return None
 
-    def _get_stroke_color(  # pylint: disable=R0911
-        self, color: Optional[Union[str | bool]]
-    ) -> RGB | None:
+    def _get_stroke_color(self, color: Optional[Union[str | bool]]) -> RGB | None:
         """Get color"""
 
         if isinstance(color, bool):
-            if self.stroke_color:  # pylint: disable=R1705
+            if self.stroke_color:
                 if isinstance(self.stroke_color, bool):
                     return Utils.hex_to_rgba("#fff")
 
@@ -180,13 +176,11 @@ class Figure:
 
         return None
 
-    def _get_fill_color(  # pylint: disable=R0911
-        self, color: Optional[Union[str | bool]]
-    ) -> RGB | None:
+    def _get_fill_color(self, color: Optional[Union[str | bool]]) -> RGB | None:
         """Get color"""
 
         if isinstance(color, bool):
-            if self.fill_color:  # pylint: disable=R1705
+            if self.fill_color:
                 if isinstance(self.fill_color, bool):
                     return Utils.hex_to_rgba("#fff")
 
@@ -312,7 +306,7 @@ class Figure:
         fill_color = self._get_fill_color(fill_color)
 
         if isinstance(self, Line):
-            points = np.array([self.points[0], self.points[1]], dtype=np.int32)
+            points = np.array([self.points[0], self.points[1]], dtype=np.int16)
 
             cv.line(
                 self.cnv,
@@ -322,7 +316,7 @@ class Figure:
                 1 if stroke_width < 1 else stroke_width,
             )
         else:
-            points = [np.array(self.points, dtype=np.int32)]
+            points = np.array([self.points], dtype=np.int32)
 
             cv.polylines(
                 self.cnv,
@@ -556,17 +550,17 @@ def test():
 
     for i, fig in enumerate([rect, oval, polyline]):
         # 1
-        fig.set_pivot(0.45, 0.45).draw(fill_color=cfg.colors[i % len(cfg.colors)])
+        fig.draw(fill_color=cfg.colors[i % len(cfg.colors)])
         pivot.move(fig.x, fig.y).draw()
         # 2
-        fig.translate(250, 0).draw(
+        fig.set_pivot(0.40, 0.40).translate(250, 0).draw(
             stroke_width=5,
             stroke_color=cfg.colors[(i + 6) % len(cfg.colors)],
             fill_color=cfg.colors[i % len(cfg.colors)],
         )
         pivot.move(fig.x, fig.y).draw()
         # 3
-        fig.translate(250, 0).scale(1, 0.5).draw(
+        fig.set_pivot(0.60, 0.60).translate(250, 0).scale(1, 0.5).draw(
             stroke_color=cfg.colors[i % len(cfg.colors)],
             fill_color=(
                 cfg.colors[(i + 1) % len(cfg.colors)]
@@ -601,12 +595,12 @@ def test():
         fig.reset().translate(0, 500).draw()
         pivot.move(fig.x, fig.y).draw()
         # 8
-        fig.set_pivot(0.25, 0.25).translate(250, 0).scale(0.5, 1).rotate(
-            rotation_angle * -3
-        ).draw(stroke_width=2)
+        fig.translate(250, 0).scale(0.5, 1).rotate(rotation_angle * -3).draw(
+            stroke_width=2
+        )
         pivot.move(fig.x, fig.y).draw()
         # 9
-        fig.move(650, 650).draw(fill_color=cfg.colors[i % len(cfg.colors)])
+        fig.move(650, 650).rotate(-15).draw(fill_color=cfg.colors[i % len(cfg.colors)])
         pivot.move(fig.x, fig.y).draw()
         # 10
         fig.translate(-500, 250).scale(1, 0.5).rotate(-45).draw(

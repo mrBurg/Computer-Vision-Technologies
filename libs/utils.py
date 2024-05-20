@@ -1,5 +1,7 @@
 """Utils"""
 
+# pylint: disable=C0301
+
 from dataclasses import dataclass
 import time
 from pathlib import Path
