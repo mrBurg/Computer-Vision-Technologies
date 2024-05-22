@@ -1,6 +1,6 @@
 """Figure Factory 3D"""
 
-# pylint: disable=E1101, W0237, R0913, R0902, C0301, R0913, R1705
+# pylint: disable=E1101, W0237, R0913, R0902, C0301, R0913, R1705, R0911
 
 from dataclasses import dataclass
 from typing import Union, Tuple, List, Optional
