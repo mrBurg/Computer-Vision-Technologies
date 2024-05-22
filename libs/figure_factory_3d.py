@@ -1,12 +1,12 @@
 """Figure Factory 3D"""
 
-# pylint: disable=E1101, W0237, R0913, R0902, C0301, R0913
+# pylint: disable=E1101, W0237, R0913, R0902, C0301, R0913, R1705
 
 from dataclasses import dataclass
-from typing import Union, Tuple, List
+from typing import Union, Tuple, List, Optional
 import numpy as np
 import cv2 as cv
-from utils import Utils
+from utils import Utils, RGB
 from config import Config
 from figure_factory import Rectangle, Polyline
 
@@ -190,6 +190,93 @@ class Figure3D:
 
         self.parts = np.array([back, bottom, left, right, front, top])
 
+    def _get_stroke_width(
+        self, weight: Optional[Union[int, float, bool]]
+    ) -> Union[int, None]:
+        """Get weight"""
+
+        if isinstance(weight, bool):
+            if self.stroke_width:
+                return int(round(self.stroke_width))
+
+            elif self.stroke_width is None:
+                return None
+
+            if weight:
+                self.stroke_width = 1
+
+                return self.stroke_width
+
+            self.stroke_width = 0
+
+            return self.stroke_width
+
+        if isinstance(weight, (int, float)):
+            self.stroke_width = int(round(weight))
+
+            return self.stroke_width
+
+        self.stroke_width = None
+
+        return None
+
+    def _get_stroke_color(self, color: Optional[Union[str | bool]]) -> RGB | None:
+        """Get color"""
+
+        if isinstance(color, bool):
+            if self.stroke_color:
+                if isinstance(self.stroke_color, bool):
+                    return Utils.hex_to_rgba("#fff")
+
+                return Utils.hex_to_rgba(self.stroke_color)
+
+            elif self.stroke_color is None:
+                return None
+
+            if color:
+                self.stroke_color = "#fff"
+
+                return Utils.hex_to_rgba(self.stroke_color)
+
+            self.stroke_color = "#000"
+
+            return Utils.hex_to_rgba(self.stroke_color)
+
+        if isinstance(color, str):
+            self.stroke_color = color
+
+            return Utils.hex_to_rgba(self.stroke_color)
+
+        self.stroke_color = None
+
+        return None
+
+    def _get_fill_color(self, color: Optional[Union[str | bool]]) -> RGB | None:
+        """Get color"""
+
+        if isinstance(color, bool):
+            if self.fill_color:
+                if isinstance(self.fill_color, bool):
+                    return Utils.hex_to_rgba("#fff")
+
+                return Utils.hex_to_rgba(self.fill_color)
+
+            elif self.fill_color is None:
+                return None
+
+            self.fill_color = None
+
+            return self.fill_color
+
+        if isinstance(color, str):
+            self.fill_color = color
+
+            return Utils.hex_to_rgba(self.fill_color)
+
+        self.fill_color = None
+
+        return None
+
     def translate_3d(self, tx: float, ty: float, tz: float) -> "Figure3D":
         """Translate"""
 
@@ -260,8 +347,17 @@ class Figure3D:
 
         return self
 
-    def draw(self) -> "Figure3D":
+    def draw(
+        self,
+        stroke_width: Union[float, bool] = False,
+        stroke_color: Union[str, bool] = False,
+        fill_color: Union[str, bool] = False,
+    ) -> "Figure3D":
         """Draw figure"""
+
+        stroke_width = self._get_stroke_width(stroke_width)
+        stroke_color = self._get_stroke_color(stroke_color)
+        fill_color = self._get_fill_color(fill_color)
 
         for points in self.parts:
             points = np.delete(points, -1, axis=1)
