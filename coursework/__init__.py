@@ -64,6 +64,7 @@ def test():
 
         resized_icon = file.image.resize((icon_width, icon_height))
 
+        # img_proces.image.paste(resized_icon, (i * icon_width, 0))
         img_proces.image.paste(resized_icon, (i % 2 * icon_width, i // 2 * icon_height))
 
     image_data = np.array(img_proces.image)

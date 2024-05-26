@@ -44,9 +44,9 @@ class ImageProcessing:
 
         image_array = np.array(self.image)
         gray_image = np.mean(image_array, axis=2, dtype=int)
-        self.image = Image.fromarray(gray_image.astype("uint8"))
+        self.image = Image.fromarray(gray_image.astype(np.uint8))
         # gray_image_rgb = np.stack((gray_image,) * 3, axis=-1)
-        # self.image = Image.fromarray(gray_image_rgb.astype("uint8"))
+        # self.image = Image.fromarray(gray_image_rgb.astype(np.uint8))
         self.draw = ImageDraw.Draw(self.image)
 
         # for i in range(self.width):
@@ -103,8 +103,8 @@ class ImageProcessing:
         """noise"""
 
         img_array = np.array(self.image)
-        noise = np.random.randint(-factor, factor + 1, img_array.shape, dtype="int16")
-        noisy_img = np.clip(img_array.astype("int16") + noise, 0, 255).astype("uint8")
+        noise = np.random.randint(-factor, factor + 1, img_array.shape, dtype=np.int16)
+        noisy_img = np.clip(img_array.astype(np.int16) + noise, 0, 255).astype(np.uint8)
         self.image = Image.fromarray(noisy_img)
         self.draw = ImageDraw.Draw(self.image)
 
@@ -128,7 +128,9 @@ class ImageProcessing:
         """brightness"""
 
         img_array = np.array(self.image)
-        bright_img = np.clip(img_array.astype("int16") + factor, 0, 255).astype("uint8")
+        bright_img = np.clip(img_array.astype(np.int16) + factor, 0, 255).astype(
+            np.uint8
+        )
         self.image = Image.fromarray(bright_img)
         self.draw = ImageDraw.Draw(self.image)
 
@@ -152,7 +154,7 @@ class ImageProcessing:
         threshold = ((255 + factor) // 2) * 3
         mono_img = np.where(sum_rgb > threshold, 255, 0)
         mono_img = np.stack([mono_img] * 3, axis=-1)
-        self.image = Image.fromarray(mono_img.astype("uint8"))
+        self.image = Image.fromarray(mono_img.astype(np.uint8))
         self.draw = ImageDraw.Draw(self.image)
 
         # for i in range(self.width):
