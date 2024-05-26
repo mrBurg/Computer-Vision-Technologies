@@ -6,8 +6,6 @@ import sys
 from pathlib import Path
 import numpy as np
 import cv2 as cv
-from matplotlib import pyplot as plt
-from PIL import Image, ImageDraw, ImageFilter
 
 LIBS_PATH = Path.cwd().resolve()
 
