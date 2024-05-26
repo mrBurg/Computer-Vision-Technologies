@@ -3,19 +3,72 @@
 # pylint: disable=E1101, C0412, W0603
 
 import sys
-from random import random
 from pathlib import Path
 import numpy as np
 import cv2 as cv
+from matplotlib import pyplot as plt
 
 LIBS_PATH = Path.cwd().resolve()
 
 sys.path.append(str(LIBS_PATH))
 
 try:
-    from figure_factory_3d import Utils, Config, Parallelepiped
+    from image_processing import ImageProcessing
 except ImportError:
-    from libs.figure_factory_3d import Utils, Config, Parallelepiped
+    from libs.image_processing import ImageProcessing
+
+
+def show(image, visualizer=cv) -> None:
+    """show"""
+
+    if visualizer == plt:
+        plt.imshow(image)
+        plt.show()
+
+        return
+
+    win_name = "Window"
+    image = np.array(image)
+    data = cv.cvtColor(image, cv.COLOR_RGB2BGR)
+
+    cv.namedWindow(win_name, cv.WINDOW_AUTOSIZE)
+    cv.imshow(win_name, data)
+    cv.waitKey(0)
+    cv.destroyAllWindows()
+
+
+def test():
+    """Test function"""
+
+    img_proces = ImageProcessing()
+
+    img = img_proces.read_file("./img.jpg")
+    show(img.image, plt)
+
+    img = img_proces.reset().gray_shades()
+    show(img.image)
+
+    img = img_proces.reset().serpia()
+    show(img.image)
+
+    img = img_proces.reset().negative()
+    show(img.image)
+
+    img = img_proces.reset().noise()
+    show(img.image)
+
+    img = img_proces.reset().brightness()
+    show(img.image)
+
+    img = img_proces.reset().monochrome()
+    show(img.image)
+
+    img = img_proces.reset().contour()
+    show(img.image)
+
+
+if __name__ == "__main__":
+    test()
 
 # cfg = Config()
 

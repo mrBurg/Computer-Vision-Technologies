@@ -76,7 +76,6 @@ class Config:
         add_colors: Optional[List[str]] = None,  # Adds a set to the default colors
     ) -> None:
         self.height, self.width, _ = self.default_cnv_props
-        print(self.width, self.height)
         self.depth = max(1, min(depth if depth else self.default_cnv_props[2], 4))
 
         if colors:

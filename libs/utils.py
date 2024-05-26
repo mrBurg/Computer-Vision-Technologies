@@ -104,7 +104,7 @@ class Utils:
         if flag == "All":
             return list(files)
 
-        return list(files)[0]
+        return str(list(files)[0])
 
 
 def test():
