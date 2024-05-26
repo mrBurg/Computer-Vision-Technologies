@@ -7,171 +7,74 @@ from pathlib import Path
 import numpy as np
 import cv2 as cv
 from matplotlib import pyplot as plt
+from PIL import Image, ImageDraw, ImageFilter
 
 LIBS_PATH = Path.cwd().resolve()
 
 sys.path.append(str(LIBS_PATH))
 
 try:
+    from utils import Utils
+except ImportError:
+    from libs.utils import Utils
+try:
     from image_processing import ImageProcessing
 except ImportError:
     from libs.image_processing import ImageProcessing
 
 
-def show(image, visualizer=cv) -> None:
-    """show"""
+def mouse_callback(event, x, y, _flags, _params):
+    """Mouse callback"""
 
-    if visualizer == plt:
-        plt.imshow(image)
-        plt.show()
-
-        return
-
-    win_name = "Window"
-    image = np.array(image)
-    data = cv.cvtColor(image, cv.COLOR_RGB2BGR)
-
-    cv.namedWindow(win_name, cv.WINDOW_AUTOSIZE)
-    cv.imshow(win_name, data)
-    cv.waitKey(0)
-    cv.destroyAllWindows()
+    if event == cv.EVENT_LBUTTONUP:
+        print(x, y)
 
 
 def test():
     """Test function"""
 
+    win_name = "Window"
+
+    effects = [
+        "gray_shades",
+        "serpia",
+        "negative",
+        "noise",
+        "brightness",
+        "monochrome",
+        "contour",
+    ]
+
     img_proces = ImageProcessing()
+    img_proces.read_file(Utils.get_path("./img.jpg"))
 
-    img = img_proces.read_file("./img.jpg")
-    show(img.image, plt)
+    for i, effect in enumerate(effects):
+        icon_proces = ImageProcessing()
+        file = icon_proces.read_file(Utils.get_path("./img.jpg"))
 
-    img = img_proces.reset().gray_shades()
-    show(img.image)
+        effect_method = getattr(icon_proces, effect)
+        effect_method()
 
-    img = img_proces.reset().serpia()
-    show(img.image)
+        icon_size = file.image.size
 
-    img = img_proces.reset().negative()
-    show(img.image)
+        # icon_width = int(img_proces.image.size[0] / len(effects))
+        # icon_height = int(icon_width * (icon_size[1] / icon_size[0]))
+        icon_height = int(icon_size[1] / np.round(len(effects) / 2))
+        icon_width = int(icon_height * (icon_size[0] / icon_size[1]))
 
-    img = img_proces.reset().noise()
-    show(img.image)
+        resized_icon = file.image.resize((icon_width, icon_height))
 
-    img = img_proces.reset().brightness()
-    show(img.image)
+        img_proces.image.paste(resized_icon, (i % 2 * icon_width, i // 2 * icon_height))
 
-    img = img_proces.reset().monochrome()
-    show(img.image)
+    image_data = np.array(img_proces.image)
+    bgr_data = cv.cvtColor(image_data, cv.COLOR_RGB2BGR)
 
-    img = img_proces.reset().contour()
-    show(img.image)
+    cv.namedWindow(win_name, cv.WINDOW_AUTOSIZE)
+    cv.setMouseCallback(win_name, mouse_callback)
+    cv.imshow(win_name, bgr_data)
+    cv.waitKey(0)
+    cv.destroyAllWindows()
 
 
 if __name__ == "__main__":
     test()
-
-# cfg = Config()
-
-# cnv = np.full(cfg.cnv_props, 255, dtype=np.uint8)
-
-# WIN_NAME = "Window"
-# CX = cfg.width / 2
-# CY = cfg.height / 2
-# BG_COLOR = Utils.hex_to_rgba(cfg.colors[12])
-# STROKE_COLOR = Utils.hex_to_rgba(cfg.colors[5])
-# prllppd_config = 400, 350, 200
-# RX = RY = TX = TY = 0
-# COUNTER = 0
-
-# prllppd = (
-#     Parallelepiped(cnv, *prllppd_config, stroke_width=5)
-#     .translate_3d(CX, CY, 0)
-#     .rotate_3d(random() * 45, random() * 45, random() * 45)
-# )
-
-
-# def mouse_callback(event, x, y, _flags, _params):
-#     """Mouse callback"""
-
-#     global RX, RY
-
-#     if event == cv.EVENT_MOUSEMOVE:
-#         RX = 100 / CX * (x - CX) / -100
-#         RY = 100 / CY * (y - CY) / -100
-
-
-# def keyboard_callback(key):
-#     """Keyboard callback"""
-
-#     global TX, TY
-
-#     if key == ord("q"):
-#         return False
-
-#     if key == ord("a"):
-#         TX = -1
-
-#     if key == ord("d"):
-#         TX = 1
-
-#     if key == ord("w"):
-#         TY = -1
-
-#     if key == ord("s"):
-#         TY = 1
-
-#     if key == ord("c"):
-#         TX = TY = 0
-
-#     return True
-
-
-# b = 255 - STROKE_COLOR[0]
-# g = 255 - STROKE_COLOR[1]
-# r = 255 - STROKE_COLOR[2]
-
-
-# def animation() -> None:
-#     """Main animation"""
-
-#     global COUNTER
-
-#     cnv.fill(255)
-#     cnv[:] = BG_COLOR
-
-#     coef = np.sin(COUNTER / min(b, g, r))
-
-#     cfg.grid(cnv, size=200, position=(int(CX), int(CY)))
-
-#     prllppd.translate_3d(TX, TY, 0).rotate_3d(RY, RX, 0).draw(
-#         stroke_color=Utils.rgba_to_hex(
-#             STROKE_COLOR[0] + abs(round(b * coef)),
-#             STROKE_COLOR[1] + abs(round(g * coef)),
-#             STROKE_COLOR[2] + abs(round(r * coef)),
-#         )
-#     )
-
-#     COUNTER += 1
-
-#     cv.imshow(WIN_NAME, cnv)
-
-#     key = cv.waitKey(1) & 0xFF
-
-#     return keyboard_callback(key)
-
-
-# print("Move the mouse left and right to rotate along the Y axis")
-# print("Move the mouse up and down to rotate along the X axis")
-# print("Press the 'A' and 'D' to move along the X axis")
-# print("Press the 'W' and 'S' to move along the Y axis")
-# print("Press the 'C' to stop moving")
-# print("Press 'Q' for stop")
-
-# cv.namedWindow(WIN_NAME, cv.WINDOW_AUTOSIZE)
-# cv.setMouseCallback(WIN_NAME, mouse_callback)
-# Utils.animate(animation, 0.025)
-
-# print("Press any key for exit")
-
-# cv.waitKey(0)
-# cv.destroyAllWindows()
