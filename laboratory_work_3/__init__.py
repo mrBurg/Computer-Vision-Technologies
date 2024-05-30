@@ -43,8 +43,8 @@ def mouse_callback(event, x, y, _flags, _params):
     global RX, RY
 
     if event == cv.EVENT_MOUSEMOVE:
-        RX = 100 / CX * (x - CX) / -100
-        RY = 100 / CY * (y - CY) / -100
+        RX = 100 / prllppd.x * (x - prllppd.x) / -100
+        RY = 100 / prllppd.y * (y - prllppd.y) / -100
 
 
 def keyboard_callback(key):

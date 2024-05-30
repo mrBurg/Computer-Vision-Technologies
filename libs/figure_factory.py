@@ -2,7 +2,7 @@
 
 # pylint: disable=E1101, W0237, R0913, R0902, R0911, R1705, C0301
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Union, List, Tuple, Optional
 import numpy as np
 import cv2 as cv
@@ -31,7 +31,7 @@ class Figure:
     y: float = 0
     width: float = 0
     height: float = 0
-    pivot: Point = field(default_factory=lambda: [0.5, 0.5])
+    pivot: Point = None
     stroke_width: Union[float, bool] = False
     stroke_color: Union[str, bool] = False
     fill_color: Union[str, bool] = False

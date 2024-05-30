@@ -40,6 +40,7 @@ class Figure3D:
     stroke_color: Union[str, bool] = False
     fill_color: Union[str, bool] = False
     initial_props: Points = None
+    cam_pos: Tuple[float, float, float] = None
 
     def __init__(
         self,
@@ -62,6 +63,7 @@ class Figure3D:
         self.fill_color = fill_color
         self.initial_props = self.points = points
         self.parts = []
+        self.cam_pos = [0, 0, 10000]
 
     @staticmethod
     def get_projection_matrix_3d(length: float) -> Matrix:
@@ -189,6 +191,12 @@ class Figure3D:
         left = [back[0], front[0], front[3], back[3]]
 
         self.parts = np.array([back, bottom, left, right, front, top])
+
+        face_centers = np.array([np.mean(face, axis=0) for face in self.parts])
+
+        distances = np.linalg.norm(face_centers - self.cam_pos, axis=1)
+
+        self.parts = self.parts[np.argsort(-distances)]
 
     def _get_stroke_width(
         self, weight: Optional[Union[int, float, bool]]
@@ -367,6 +375,7 @@ class Figure3D:
                 points,
                 stroke_width=self.stroke_width,
                 stroke_color=self.stroke_color,
+                fill_color=self.fill_color,
             ).draw()
 
         return self
@@ -379,8 +388,6 @@ class Parallelepiped(Figure3D):
     def __init__(  # pylint: disable=R0914
         self, cnv: Canvas, width, height, length, **kwargs
     ) -> None:
-        Rectangle(cnv, width, height)
-
         back = Rectangle(cnv, width, height)
         front = Rectangle(cnv, width, height)
 
@@ -413,7 +420,13 @@ def test():
 
     cfg.grid(cnv, color=Utils.hex_to_rgba(cfg.colors[15]), position=(int(cx), int(cy)))
     prllppd = (
-        Parallelepiped(cnv, *prllppd_config, stroke_width=2, stroke_color=cfg.colors[0])
+        Parallelepiped(
+            cnv,
+            *prllppd_config,
+            stroke_width=2,
+            stroke_color=cfg.colors[0],
+            fill_color=cfg.colors[2]
+        )
         .translate_3d(cx, cy, prllppd_config[2] / 2)
         .rotate_3d(45, 45, 45)
     )
