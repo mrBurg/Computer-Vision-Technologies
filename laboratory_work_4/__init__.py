@@ -1,9 +1,8 @@
-"""Laboratory work 3"""
+"""Laboratory work 4"""
 
 # pylint: disable=E1101, C0412, W0603
 
 import sys
-from typing import Tuple
 from random import random
 from pathlib import Path
 import numpy as np

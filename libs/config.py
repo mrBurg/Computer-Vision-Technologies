@@ -155,7 +155,7 @@ class Config:
         for i in range(0, -position[1], -size):
             horizontal_line(i)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return Utils.description(
             self.__class__.__name__,
             [
@@ -179,7 +179,7 @@ class Config:
         return repr(self)
 
 
-def test():
+def test() -> None:
     """Test function"""
 
     win_name = "Window"

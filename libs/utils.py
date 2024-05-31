@@ -11,6 +11,7 @@ from math import radians, degrees
 __version__ = "2.0.0"
 
 RGB = Tuple[int, int, int, Union[float, None]]
+BGR = RGB
 
 
 @dataclass
@@ -18,7 +19,7 @@ class Utils:
     """Utils"""
 
     @staticmethod
-    def reshuffle(rgb) -> RGB:
+    def reshuffle(rgb: RGB) -> BGR:
         """Rearrangement"""
 
         if len(rgb) == 3:
@@ -60,7 +61,7 @@ class Utils:
         return None
 
     @staticmethod
-    def rgba_to_hex(r: int, g: int, b: int):
+    def rgba_to_hex(r: int, g: int, b: int) -> str:
         """Converts a RGB color to HEX"""
 
         return f"#{r:02x}{g:02x}{b:02x}"  # "#%02x%02x%02x" % (r, g, b)
@@ -114,7 +115,7 @@ class Utils:
         return str(list(files)[0])
 
 
-def test():
+def test() -> None:
     """Test function"""
 
     color_rgba = "#f00f"

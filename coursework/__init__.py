@@ -21,14 +21,14 @@ except ImportError:
     from libs.image_processing import ImageProcessing
 
 
-def mouse_callback(event, x, y, _flags, _params):
+def mouse_callback(event, x, y, _flags, _params) -> None:
     """Mouse callback"""
 
     if event == cv.EVENT_LBUTTONUP:
         print(x, y)
 
 
-def test():
+def test() -> None:
     """Test function"""
 
     win_name = "Window"
@@ -44,11 +44,11 @@ def test():
     ]
 
     img_proces = ImageProcessing()
-    img_proces.read_file(Utils.get_path("./img.jpg"))
+    img_proces.read_file(Utils.get_path("./coursework/img.jpg"))
 
     for i, effect in enumerate(effects):
         icon_proces = ImageProcessing()
-        file = icon_proces.read_file(Utils.get_path("./img.jpg"))
+        file = icon_proces.read_file(Utils.get_path("./coursework/img.jpg"))
 
         effect_method = getattr(icon_proces, effect)
         effect_method()

@@ -3,7 +3,7 @@
 # pylint: disable=E1101
 
 from typing import Tuple, List
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from utils import Utils
 from PIL import Image, ImageDraw, ImageFilter
 import numpy as np
@@ -24,10 +24,10 @@ class ImageProcessing:
     draw: ImageDraw = None
     width: int = 0
     height: int = 0
-    pixel_data: List[RGB] = field(default_factory=lambda: [])
+    pixel_data: List[RGB] = None
     initial_image: Image = None
 
-    def read_file(self, path: str) -> any:
+    def read_file(self, path: str) -> "ImageProcessing":
         """read_file"""
 
         self.image = Image.open(path)
@@ -39,29 +39,18 @@ class ImageProcessing:
 
         return self
 
-    def gray_shades(self):
+    def gray_shades(self) -> "ImageProcessing":
         """gray_shades"""
 
         image_array = np.array(self.image)
         gray_image = np.mean(image_array, axis=2, dtype=int)
         self.image = Image.fromarray(gray_image.astype(np.uint8))
-        # gray_image_rgb = np.stack((gray_image,) * 3, axis=-1)
-        # self.image = Image.fromarray(gray_image_rgb.astype(np.uint8))
         self.draw = ImageDraw.Draw(self.image)
-
-        # for i in range(self.width):
-        #     for j in range(self.height):
-        #         a = self.pixel_data[i, j][0]
-        #         b = self.pixel_data[i, j][1]
-        #         c = self.pixel_data[i, j][2]
-        #         s = (a + b + c) // 3
-
-        #         self.draw.point((i, j), (s, s, s))
 
         return self
 
-    def serpia(self, depth=50) -> None:
-        """serpia"""
+    def sepia(self, depth=50) -> None:
+        """sepia"""
 
         for i in range(self.width):
             for j in range(self.height):
@@ -89,14 +78,6 @@ class ImageProcessing:
         self.image = Image.fromarray(negative_array)
         self.draw = ImageDraw.Draw(self.image)
 
-        # for i in range(self.width):
-        #     for j in range(self.height):
-        #         a = self.pixel_data[i, j][0]
-        #         b = self.pixel_data[i, j][1]
-        #         c = self.pixel_data[i, j][2]
-
-        #         self.draw.point((i, j), (255 - a, 255 - b, 255 - c))
-
         return self
 
     def noise(self, factor=100) -> None:
@@ -107,20 +88,6 @@ class ImageProcessing:
         noisy_img = np.clip(img_array.astype(np.int16) + noise, 0, 255).astype(np.uint8)
         self.image = Image.fromarray(noisy_img)
         self.draw = ImageDraw.Draw(self.image)
-
-        # for i in range(self.width):
-        #     for j in range(self.height):
-        #         rand = random.randint(-factor, factor)
-
-        #         a = self.pixel_data[i, j][0] + rand
-        #         b = self.pixel_data[i, j][1] + rand
-        #         c = self.pixel_data[i, j][2] + rand
-
-        #         a = min(max(self.pixel_data[i, j][0] + rand, 0), 255)
-        #         b = min(max(self.pixel_data[i, j][1] + rand, 0), 255)
-        #         c = min(max(self.pixel_data[i, j][2] + rand, 0), 255)
-
-        #         self.draw.point((i, j), (a, b, c))
 
         return self
 
@@ -134,16 +101,6 @@ class ImageProcessing:
         self.image = Image.fromarray(bright_img)
         self.draw = ImageDraw.Draw(self.image)
 
-        # for i in range(self.width):
-        #     for j in range(self.height):
-        #         r, g, b = self.pixel_data[i, j]
-
-        #         r = min(max(r + factor, 0), 255)
-        #         g = min(max(g + factor, 0), 255)
-        #         b = min(max(b + factor, 0), 255)
-
-        #         self.draw.point((i, j), (r, g, b))
-
         return self
 
     def monochrome(self, factor: int = 100) -> None:
@@ -156,19 +113,6 @@ class ImageProcessing:
         mono_img = np.stack([mono_img] * 3, axis=-1)
         self.image = Image.fromarray(mono_img.astype(np.uint8))
         self.draw = ImageDraw.Draw(self.image)
-
-        # for i in range(self.width):
-        #     for j in range(self.height):
-        #         a = self.pixel_data[i, j][0]
-        #         b = self.pixel_data[i, j][1]
-        #         c = self.pixel_data[i, j][2]
-
-        #         s = a + b + c
-        #         if s > (((255 + factor) // 2) * 3):
-        #             a, b, c = 255, 255, 255
-        #         else:
-        #             a, b, c = 0, 0, 0
-        #         self.draw.point((i, j), (a, b, c))
 
         return self
 
@@ -189,7 +133,7 @@ class ImageProcessing:
         return self
 
 
-def test():
+def test() -> None:
     """Test function"""
 
     def show() -> None:
@@ -205,14 +149,14 @@ def test():
         cv.destroyAllWindows()
 
     img_proces = ImageProcessing()
-    img = img_proces.read_file(Utils.get_path("./img.jpg"))
+    img = img_proces.read_file(Utils.get_path("./images/image.jpg"))
 
     show()
 
     img = img_proces.reset().gray_shades()
     show()
 
-    img = img_proces.reset().serpia()
+    img = img_proces.reset().sepia()
     show()
 
     img = img_proces.reset().negative()

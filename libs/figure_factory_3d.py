@@ -420,7 +420,7 @@ class Parallelepiped(Figure3D):
         self._make_parallelepiped_parts()
 
 
-def test():
+def test() -> None:
     """Test function"""
 
     cfg = Config()

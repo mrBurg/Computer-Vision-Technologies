@@ -388,7 +388,7 @@ class PolyOval(Figure):
 
         super().__init__(cnv, self.points, width, height, **kwargs)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return Utils.description(
             self.__class__.__name__,
             [
@@ -524,7 +524,7 @@ class Line(Figure):
         return self
 
 
-def test():
+def test() -> None:
     """Test function"""
 
     width = 200
