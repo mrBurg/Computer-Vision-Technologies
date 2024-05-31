@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Callable, Tuple, Union, List, Optional
 from math import radians, degrees
 
-__version__ = "1.0.0"
+__version__ = "2.0.0"
 
 RGB = Tuple[int, int, int, Union[float, None]]
 
@@ -18,14 +18,21 @@ class Utils:
     """Utils"""
 
     @staticmethod
+    def reshuffle(rgb) -> RGB:
+        """Rearrangement"""
+
+        if len(rgb) == 3:
+            return rgb[::-1]
+
+        rgb_channels = rgb[:3]
+
+        return (*rgb_channels[::-1], rgb[-1])
+
+    @staticmethod
     def hex_to_rgba(hex_str: str) -> RGB:
         """Converts a HEX color to RGB"""
 
         if hex_str:
-            # r = int(hex_str[0:2], 16)
-            # g = int(hex_str[2:4], 16)
-            # b = int(hex_str[4:6], 16)
-
             rgba = []
             hex_str = hex_str.lstrip("#")
 
@@ -34,7 +41,7 @@ class Utils:
 
             if len(hex_str) == 6:
                 for i in range(0, 5, 2):
-                    rgba.insert(0, int(hex_str[i : i + 2], 16))
+                    rgba.append(int(hex_str[i : i + 2], 16))
 
             elif len(hex_str) == 8:
                 for i in range(0, 7, 2):
@@ -46,7 +53,7 @@ class Utils:
 
                         break
 
-                    rgba.insert(0, color)
+                    rgba.append(color)
 
             return tuple(rgba)
 
@@ -110,15 +117,24 @@ class Utils:
 def test():
     """Test function"""
 
+    color_rgba = "#f00f"
+    color_rgb = "#f00"
+    deg = 45
+
     print("\033[33m")
-    print(f"HEX #ff0000[ff] (#f00[f]) to RGB is equal to: {Utils.hex_to_rgba('#ffff')}")
     print(
-        f"RGB (255, 255, 255) to HEX is equal to: {Utils.rgba_to_hex(*Utils.hex_to_rgba('#fff'))}"
+        f"HEX #ff0000[ff] or #f00[f] to RGB is equal to: {Utils.hex_to_rgba(color_rgba)} or {Utils.hex_to_rgba(color_rgb)}"
+    )
+    print(
+        f"RGB {Utils.hex_to_rgba(color_rgb)} to HEX is equal to: {Utils.rgba_to_hex(*Utils.hex_to_rgba(color_rgb))}"
+    )
+    print(
+        f"RGBA {Utils.hex_to_rgba(color_rgba)} to BGRA is equal to: {Utils.reshuffle(Utils.hex_to_rgba(color_rgba))}"
     )
 
-    print(f"45 degrees in radians is equal to: {Utils.deg_to_rads(45)}")
+    print(f"{deg} degrees in radians is equal to: {Utils.deg_to_rads(deg)}")
     print(
-        f"{Utils.deg_to_rads(45)} radians in degrees is equal to: {Utils.rads_to_deg(Utils.deg_to_rads(45))}"
+        f"{Utils.deg_to_rads(deg)} radians in degrees is equal to: {Utils.rads_to_deg(Utils.deg_to_rads(deg))}"
     )
     print("\033[0m")
 
