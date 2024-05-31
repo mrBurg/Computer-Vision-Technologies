@@ -132,8 +132,6 @@ def animation() -> None:
     if prllppd.y > cfg.height:
         prllppd.move_3d(prllppd.x, 0, 0)
 
-    print(prllppd.x, prllppd.y, prllppd.z)
-
     COUNTER += 1
 
     cv.imshow(WIN_NAME, cnv)
