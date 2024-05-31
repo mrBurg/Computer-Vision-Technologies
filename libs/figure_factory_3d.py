@@ -355,6 +355,20 @@ class Figure3D:
 
         return self
 
+    def move_3d(self, mx: float, my: float, mz: float) -> "Figure3D":
+        """Move"""
+
+        self._apply_matrix_3d(
+            Figure3D.get_translate_matrix_3d(-self.x, -self.y, -self.z)
+        )
+
+        self.x = mx
+        self.y = my
+        self.z = mz
+        self._apply_matrix_3d(Figure3D.get_translate_matrix_3d(self.x, self.y, self.z))
+
+        return self
+
     def draw(
         self,
         stroke_width: Union[float, bool] = False,
