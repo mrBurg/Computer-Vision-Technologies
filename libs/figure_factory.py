@@ -151,9 +151,9 @@ class Figure:
         if isinstance(color, bool):
             if self.stroke_color:
                 if isinstance(self.stroke_color, bool):
-                    return Utils.hex_to_rgba("#fff")
+                    return Utils.reshuffle(Utils.hex_to_rgba("#fff"))
 
-                return Utils.hex_to_rgba(self.stroke_color)
+                return Utils.reshuffle(Utils.hex_to_rgba(self.stroke_color))
 
             elif self.stroke_color is None:
                 return None
@@ -161,16 +161,16 @@ class Figure:
             if color:
                 self.stroke_color = "#fff"
 
-                return Utils.hex_to_rgba(self.stroke_color)
+                return Utils.reshuffle(Utils.hex_to_rgba(self.stroke_color))
 
             self.stroke_color = "#000"
 
-            return Utils.hex_to_rgba(self.stroke_color)
+            return Utils.reshuffle(Utils.hex_to_rgba(self.stroke_color))
 
         if isinstance(color, str):
             self.stroke_color = color
 
-            return Utils.hex_to_rgba(self.stroke_color)
+            return Utils.reshuffle(Utils.hex_to_rgba(self.stroke_color))
 
         self.stroke_color = None
 
@@ -182,9 +182,9 @@ class Figure:
         if isinstance(color, bool):
             if self.fill_color:
                 if isinstance(self.fill_color, bool):
-                    return Utils.hex_to_rgba("#fff")
+                    return Utils.reshuffle(Utils.hex_to_rgba("#fff"))
 
-                return Utils.hex_to_rgba(self.fill_color)
+                return Utils.reshuffle(Utils.hex_to_rgba(self.fill_color))
 
             elif self.fill_color is None:
                 return None
@@ -196,7 +196,7 @@ class Figure:
         if isinstance(color, str):
             self.fill_color = color
 
-            return Utils.hex_to_rgba(self.fill_color)
+            return Utils.reshuffle(Utils.hex_to_rgba(self.fill_color))
 
         self.fill_color = None
 

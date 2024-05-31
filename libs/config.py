@@ -1,6 +1,6 @@
 """Config"""
 
-# pylint: disable=E1101, C0301
+# pylint: disable=E1101, C0301, R0913
 
 import dataclasses
 from typing import List, Optional, Union, Tuple
