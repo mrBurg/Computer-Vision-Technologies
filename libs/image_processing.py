@@ -49,7 +49,7 @@ class ImageProcessing:
 
         return self
 
-    def sepia(self, depth=50) -> None:
+    def sepia(self, depth=50) -> "ImageProcessing":
         """sepia"""
 
         for i in range(self.width):
@@ -70,7 +70,7 @@ class ImageProcessing:
 
         return self
 
-    def negative(self) -> None:
+    def negative(self) -> "ImageProcessing":
         """negative"""
 
         img_array = np.array(self.image)
@@ -80,7 +80,7 @@ class ImageProcessing:
 
         return self
 
-    def noise(self, factor=100) -> None:
+    def noise(self, factor=100) -> "ImageProcessing":
         """noise"""
 
         img_array = np.array(self.image)
@@ -91,7 +91,7 @@ class ImageProcessing:
 
         return self
 
-    def brightness(self, factor: int = 100) -> None:
+    def brightness(self, factor: int = 100) -> "ImageProcessing":
         """brightness"""
 
         img_array = np.array(self.image)
@@ -103,7 +103,7 @@ class ImageProcessing:
 
         return self
 
-    def monochrome(self, factor: int = 100) -> None:
+    def monochrome(self, factor: int = 100) -> "ImageProcessing":
         """monochrome"""
 
         img_array = np.array(self.image)
@@ -116,14 +116,14 @@ class ImageProcessing:
 
         return self
 
-    def contour(self) -> None:
+    def contour(self) -> "ImageProcessing":
         """contour"""
 
         self.image = self.image.filter(ImageFilter.CONTOUR)
 
         return self
 
-    def reset(self) -> None:
+    def reset(self) -> "ImageProcessing":
         """contour"""
 
         self.image = self.initial_image.copy()
@@ -132,47 +132,101 @@ class ImageProcessing:
 
         return self
 
+    def _img_processing(self) -> "ImageProcessing":
+        """image_processing"""
+
+        gray = cv.cvtColor(np.array(self.image), cv.COLOR_BGR2GRAY)
+        blurred = cv.GaussianBlur(gray, (3, 3), 0)
+        edged = cv.Canny(blurred, 10, 250)
+        kernel = cv.getStructuringElement(cv.MORPH_RECT, (7, 7))
+        morph = cv.morphologyEx(edged, cv.MORPH_CLOSE, kernel)
+
+        img_data = cv.cvtColor(morph, cv.COLOR_GRAY2BGR)
+
+        self.image = Image.fromarray(img_data)
+        self.draw = ImageDraw.Draw(self.image)
+
+        return self
+
+    def _find_contours(self):
+        """find_contours"""
+
+        img_array = np.array(self.image)
+        gray = cv.cvtColor(img_array, cv.COLOR_BGR2GRAY)
+        contours, _ = cv.findContours(gray, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+
+        return contours
+
+    def img_recognition(self):
+        """img_recognition"""
+
+        self._img_processing()
+        img_cont = self._find_contours()
+
+        total = 0
+        img_array = np.array(self.image)
+
+        for c in img_cont:
+            peri = cv.arcLength(c, True)
+            approx = cv.approxPolyDP(c, 0.02 * peri, True)
+
+            if len(approx) == 4:
+                cv.drawContours(img_array, [approx], -1, (0, 255, 0), 4)
+                total += 1
+
+        self.image = Image.fromarray(cv.cvtColor(img_array, cv.COLOR_BGR2RGB))
+        self.draw = ImageDraw.Draw(self.image)
+
+        print(f"Знайдено {total} сегмент(\u0430) прямокутних \u043e\u0431'єктів")
+
+        return self
+
 
 def test() -> None:
     """Test function"""
 
+    win_name = "Window"
+    cv.namedWindow(win_name, cv.WINDOW_AUTOSIZE)
+
     def show() -> None:
         """show"""
 
-        win_name = "Window"
-        image = np.array(img.image)
+        image = np.array(img_proces.image)
         data = cv.cvtColor(image, cv.COLOR_RGB2BGR)
 
-        cv.namedWindow(win_name, cv.WINDOW_AUTOSIZE)
         cv.imshow(win_name, data)
         cv.waitKey(0)
-        cv.destroyAllWindows()
 
     img_proces = ImageProcessing()
-    img = img_proces.read_file(Utils.get_path("./images/image.jpg"))
+    img_proces.read_file(Utils.get_path("./images/image.jpg"))
 
     show()
 
-    img = img_proces.reset().gray_shades()
+    img_proces.reset().gray_shades()
     show()
 
-    img = img_proces.reset().sepia()
+    img_proces.reset().sepia()
     show()
 
-    img = img_proces.reset().negative()
+    img_proces.reset().negative()
     show()
 
-    img = img_proces.reset().noise()
+    img_proces.reset().noise()
     show()
 
-    img = img_proces.reset().brightness()
+    img_proces.reset().brightness()
     show()
 
-    img = img_proces.reset().monochrome()
+    img_proces.reset().monochrome()
     show()
 
-    img = img_proces.reset().contour()
+    img_proces.reset().contour()
     show()
+
+    img_proces.img_recognition()
+    show()
+
+    cv.destroyAllWindows()
 
 
 if __name__ == "__main__":

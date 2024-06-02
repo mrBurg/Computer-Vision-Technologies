@@ -108,11 +108,15 @@ class Utils:
         # Needs TODO: relative r, absolute a, parent p
 
         files = Path.cwd().glob(f"**/{path}")
+        files = list(files)
 
         if flag == "All":
-            return list(files)
+            return files
 
-        return str(list(files)[0])
+        if files:
+            return str(list(files)[0])
+
+        return None
 
 
 def test() -> None:
