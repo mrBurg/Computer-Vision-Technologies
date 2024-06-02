@@ -48,13 +48,20 @@ def test() -> None:
     img_proces.image.save(get_path("img_recognition.jpg"))
     show()
 
-    img_proces.sepia().noise()
+    img_proces.sepia()
+    img_proces.image.save(get_path("sepia.jpg"))
+    show()
+
+    img_proces.reset().noise()
+    img_proces.image.save(get_path("noise.jpg"))
+    show()
+
+    img_proces.reset().sepia().noise()
     img_proces.image.save(get_path("sepia_noise.jpg"))
     # cv.imwrite(
     #     str(get_path("sepia_noise.jpg")),
     #     cv.cvtColor(np.array(img_proces.image), cv.COLOR_RGB2BGR),
     # )
-    img_proces.read_file(get_path("sepia_noise.jpg"))
     show()
 
     cv.destroyAllWindows()
