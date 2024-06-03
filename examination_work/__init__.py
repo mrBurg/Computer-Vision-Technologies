@@ -1,4 +1,4 @@
-"""Laboratory work 8"""
+"""Examination_work"""
 
 # pylint: disable=E1101, C0412, W0603
 
@@ -41,27 +41,10 @@ def test() -> None:
         cv.waitKey(0)
 
     img_proces = ImageProcessing()
-    img_proces.read_file(Utils.get_path(Path(__file__).parent.name + "/images/img.jpg"))
-    show()
-
-    img_proces.img_recognition()
-    img_proces.image.save(get_path("./images/img_recognition.jpg"))
-    show()
-
-    img_proces.sepia()
-    img_proces.image.save(get_path("./images/sepia.jpg"))
-    show()
-
-    img_proces.reset().noise()
-    img_proces.image.save(get_path("./images/noise.jpg"))
-    show()
-
-    img_proces.reset().sepia().noise()
-    img_proces.image.save(get_path("./images/sepia_noise.jpg"))
-    # cv.imwrite(
-    #     str(get_path("sepia_noise.jpg")),
-    #     cv.cvtColor(np.array(img_proces.image), cv.COLOR_RGB2BGR),
-    # )
+    img_proces.read_file(
+        Utils.get_path(Path(__file__).parent.name + "/images/img.jpg")
+    ).sepia().brightness(-100)
+    img_proces.image.save(get_path("./images/sepia_brightness.jpg"))
     show()
 
     cv.destroyAllWindows()
