@@ -1,4 +1,4 @@
-"""Examination_work"""
+"""Examination work"""
 
 # pylint: disable=E1101, C0412, W0603
 
